@@ -2,14 +2,16 @@
   "name": "weg-benefits-backend",
   "version": "0.0.0",
   "private": true,
-  "description": "Scaffold local Supabase do WEG Benefits, sem regras de negocio.",
+  "description": "Supabase backend MVP do WEG Benefits",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status"
+    "supabase:status": "supabase status",
+    "db:migrate": "supabase migration up --local",
+    "db:test": "powershell -NoProfile -File scripts/test-db.ps1"
   },
   "devDependencies": {
     "supabase": "2.119.0"
