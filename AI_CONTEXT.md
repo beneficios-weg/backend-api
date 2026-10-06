@@ -1,9 +1,5 @@
 # Contexto para agentes — WEG Benefits API
 
-## Implementação vigente
-
-O responsável autorizou a implementação dos itens confirmados. Consulte [Implementação MVP](docs/implementacao-mvp.md) para comportamento implementado, decisões iniciais para revisão e limites. As instruções antigas de somente scaffold descrevem uma etapa concluída e não restringem este novo pedido.
-
 ## Decisão vigente em 2026-10-06
 
 Supabase foi confirmado pelo responsável. CLI fixada, config local e comandos npm estão presentes. Consulte [Scaffold Supabase](docs/scaffold-supabase.md). Modelo, contrato e regras de negócio continuam sem implementação. As afirmações abaixo sobre ausência de stack descrevem o estado histórico.

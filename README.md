@@ -1,33 +1,81 @@
 # WEG Benefits Backend — Supabase
 
-MVP para revisão técnica: Supabase Auth, catálogo, favoritos e visitas, com PostgreSQL, RLS e sincronização idempotente. CLI 2.119.0 fixada no lockfile; nenhum servidor Node próprio.
+Base inicial Supabase para revisão técnica, sem implementação de domínio. CLI **2.119.0** fixada no lockfile; configuração oficial local versionada. Seed e análise de logs estão desabilitados nesta base mínima.
 
-## Executar localmente
+## Instalação e execução
 
-Pré-requisitos: Node >=22.12.0 e Docker Desktop Linux ativo.
+Pré-requisitos: Node.js >= 22.12.0 e Docker Desktop com engine Linux em execução.
 
 ```sh
 npm ci
 npm run supabase:start
-npm run db:migrate
-npm run db:test
 npm run supabase:status
+npm run supabase:stop
 ```
 
-Studio: http://127.0.0.1:54323. API: http://127.0.0.1:54321. PostgreSQL: porta 54322. Chaves locais aparecem no status; nunca commitá-las. No mobile use somente chave publishable/anon com o JWT do usuário.
+O primeiro start baixa as imagens dos serviços Supabase. Studio: http://127.0.0.1:54323; API local: http://127.0.0.1:54321; PostgreSQL: porta 54322. As chaves locais podem ser consultadas com o comando de status; não devem ser commitadas. O stop padrão preserva os dados locais.
 
-`npm run supabase:stop` preserva os dados. `db:migrate` aplica migrations pendentes localmente. `db:test` usa Docker/psql e reverte seus fixtures com ROLLBACK.
+## Estrutura e limites
 
-## Contrato e decisões
+- `supabase/config.toml`: configuração local gerada pela CLI, PostgreSQL 17.
+- `supabase/migrations/`: reservado, sem migrations de domínio.
+- `package.json` e `package-lock.json`: ferramentas; não representam uma API Node.
+- [Registro do scaffold](docs/scaffold-supabase.md): decisão, escopo e validações.
 
-- [Implementação, contrato, RLS, decisões iniciais e limites](docs/implementacao-mvp.md)
-- [Migration inicial](supabase/migrations/20261006120658_initial_benefits.sql)
-- [Testes de acesso e sincronização](tests/access-and-sync.sql)
-- [Mobile implementado em branch separada](https://github.com/beneficios-weg/mobile/tree/feat/confirmed-mobile)
-- [Contexto para agentes](AI_CONTEXT.md)
+Nenhum projeto remoto foi vinculado/criado, nem tabelas, policies, funções, seeds ou endpoints de negócio implementados. Não é necessário configurar .env nesta etapa. A integração com o mobile fica para a próxima fase.
 
-Modelo inicial: categorias, estabelecimentos, benefício principal, favoritos por usuário e visitas com UUID idempotente. Catálogo é somente leitura para colaboradores; cadastro administrativo pelo Studio. Não há seed automático nem dados de parceiros reais. Primeiro acesso/recuperação usam Supabase Auth por e-mail; não há SSO WEG.
+A documentação abaixo é histórica. A decisão Supabase e os comandos acima substituem as afirmações anteriores de que não há stack ou base executável.
 
-Nenhum projeto remoto foi criado/vinculado ou alterado. Antes de publicar, revisar o modelo, conflitos, limites de envio/retensão, autorização corporativa e configuração de e-mail/redirects com o tech lead.
+---
 
-A documentação do scaffold e da consolidação anterior permanece como histórico; a migration e `docs/implementacao-mvp.md` descrevem este branch.
+# WEG Benefits API
+
+Repositório reservado ao Backend do WEG Benefits, aplicativo corporativo para
+colaboradores descobrirem benefícios em estabelecimentos parceiros próximos.
+
+## Estado atual
+
+Em 29 de setembro de 2026, este repositório contém somente documentação. Ainda
+não há aplicação, contrato HTTP publicado, modelo de dados, migrações, testes ou
+configuração de execução. Nenhuma tecnologia de Backend foi aprovada no Git.
+
+Por isso, não existem comandos de instalação ou execução válidos nem variáveis
+de ambiente confirmadas. Eles devem ser documentados depois que a implementação
+for adicionada, sem antecipar decisões técnicas.
+
+## Responsabilidade
+
+Este repositório é a fonte de verdade para:
+
+- modelo de dados e DER;
+- banco de dados e migrações;
+- endpoints, payloads e códigos HTTP;
+- autenticação e autorização da API;
+- validações e campos calculados no servidor.
+
+O repositório Mobile é a fonte de verdade para telas, navegação, UX, estado,
+permissões, armazenamento local, funcionamento offline e consumo da API. Os
+repositórios permanecem separados; este projeto não deve virar um monorepo.
+
+## Documentação
+
+- [Visão geral](docs/visao-geral.md)
+- [Estado atual e inventário](docs/estado-atual.md)
+- [Arquitetura do Backend](docs/arquitetura-backend.md)
+- [Modelo de dados e DER](docs/modelo-de-dados.md)
+- [Contrato da API](docs/contrato-api.md)
+- [Autenticação e autorização](docs/autenticacao.md)
+- [Visitas e geolocalização](docs/visitas-e-geolocalizacao.md)
+- [Integração com o Mobile](docs/integracao-mobile.md)
+- [Estratégia de testes](docs/testes-backend.md)
+- [Decisões abertas](docs/decisoes-abertas.md)
+- [Relatório da consolidação](docs/relatorio-consolidacao.md)
+
+Consulte também [AI_CONTEXT.md](AI_CONTEXT.md) antes de qualquer trabalho
+assistido por IA.
+
+## Regra de divergência
+
+Conflitos entre documentação e implementação não devem ser corrigidos
+silenciosamente. Registre o comportamento documentado, o encontrado, o impacto
+e a recomendação; use **DECISÃO PENDENTE** quando a solução depender da equipe.
