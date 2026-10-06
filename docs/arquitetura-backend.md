@@ -1,5 +1,7 @@
 # Arquitetura do Backend
 
+> Atualização de 2026-10-06: Supabase confirmado e scaffold local inicializado. Consulte [Scaffold Supabase](scaffold-supabase.md). O conteúdo abaixo preserva o planejamento/histórico; não há API de domínio implementada.
+
 ## Situação
 
 **DECISÃO PENDENTE:** não há stack nem arquitetura implementada ou aprovada no

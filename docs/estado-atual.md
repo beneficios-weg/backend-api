@@ -1,5 +1,7 @@
 # Estado atual e inventário
 
+> Atualização de 2026-10-06: Supabase confirmado e scaffold local inicializado. Consulte [Scaffold Supabase](scaffold-supabase.md). O conteúdo abaixo preserva o planejamento/histórico; não há API de domínio implementada.
+
 Data da verificação: **29/09/2026**.
 
 ## Evidência no Git antes da consolidação

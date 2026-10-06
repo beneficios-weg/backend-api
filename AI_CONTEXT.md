@@ -1,5 +1,9 @@
 # Contexto para agentes — WEG Benefits API
 
+## Decisão vigente em 2026-10-06
+
+Supabase foi confirmado pelo responsável. CLI fixada, config local e comandos npm estão presentes. Consulte [Scaffold Supabase](docs/scaffold-supabase.md). Modelo, contrato e regras de negócio continuam sem implementação. As afirmações abaixo sobre ausência de stack descrevem o estado histórico.
+
 ## Limites do repositório
 
 - Este é o repositório exclusivo do Backend (`weg-benefits-api` / `backend-api`).

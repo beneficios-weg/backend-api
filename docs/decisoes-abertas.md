@@ -1,5 +1,7 @@
 # Decisões abertas
 
+> Atualização de 2026-10-06: Supabase confirmado e scaffold local inicializado. Consulte [Scaffold Supabase](scaffold-supabase.md). O conteúdo abaixo preserva o planejamento/histórico; não há API de domínio implementada.
+
 Todos os itens abaixo estão marcados como **DECISÃO PENDENTE** porque não há
 evidência de aprovação ou implementação no Git.
 

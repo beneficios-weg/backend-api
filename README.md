@@ -1,3 +1,33 @@
+# WEG Benefits Backend — Supabase
+
+Base inicial Supabase para revisão técnica, sem implementação de domínio. CLI **2.119.0** fixada no lockfile; configuração oficial local versionada. Seed e análise de logs estão desabilitados nesta base mínima.
+
+## Instalação e execução
+
+Pré-requisitos: Node.js >= 22.12.0 e Docker Desktop com engine Linux em execução.
+
+```sh
+npm ci
+npm run supabase:start
+npm run supabase:status
+npm run supabase:stop
+```
+
+O primeiro start baixa as imagens dos serviços Supabase. Studio: http://127.0.0.1:54323; API local: http://127.0.0.1:54321; PostgreSQL: porta 54322. As chaves locais podem ser consultadas com o comando de status; não devem ser commitadas. O stop padrão preserva os dados locais.
+
+## Estrutura e limites
+
+- `supabase/config.toml`: configuração local gerada pela CLI, PostgreSQL 17.
+- `supabase/migrations/`: reservado, sem migrations de domínio.
+- `package.json` e `package-lock.json`: ferramentas; não representam uma API Node.
+- [Registro do scaffold](docs/scaffold-supabase.md): decisão, escopo e validações.
+
+Nenhum projeto remoto foi vinculado/criado, nem tabelas, policies, funções, seeds ou endpoints de negócio implementados. Não é necessário configurar .env nesta etapa. A integração com o mobile fica para a próxima fase.
+
+A documentação abaixo é histórica. A decisão Supabase e os comandos acima substituem as afirmações anteriores de que não há stack ou base executável.
+
+---
+
 # WEG Benefits API
 
 Repositório reservado ao Backend do WEG Benefits, aplicativo corporativo para
