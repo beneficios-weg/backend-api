@@ -66,10 +66,11 @@ App Password for `wegbenefits@gmail.com` and must not be committed. `MAIL_USERNA
 account and `MAIL_FROM` defaults to the agreed sender. SMTP failure rolls back user creation and is
 returned to the administrator as a generic API problem response.
 
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`, `MAIL_APP_PASSWORD`,
-and `MAIL_FROM` can be configured per environment. Production CORS origins must be explicit;
-wildcard origins are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared
-or production environment.
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`,
+`MAIL_APP_PASSWORD`, and `MAIL_FROM` can be configured per environment. The API defaults to port
+`8081`; set `SERVER_PORT` to override it. Production CORS origins must be explicit; wildcard origins
+are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared or production
+environment.
 
 Provision the first ADMIN from an interactive PowerShell terminal after the database and SMTP
 configuration are ready. The password is read without echo and is not passed as an argument:
@@ -81,9 +82,9 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 
 ## Available infrastructure endpoints
 
-- Health: `http://localhost:8080/actuator/health`
-- OpenAPI JSON: `http://localhost:8080/v1/api-docs`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Health: `http://localhost:8081/actuator/health`
+- OpenAPI JSON: `http://localhost:8081/v1/api-docs`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
 
 Only Actuator health is exposed. Health responses do not include component details. Flyway creates
 the Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement

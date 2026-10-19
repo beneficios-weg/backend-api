@@ -33,6 +33,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 
 - Implemente somente a etapa/módulo solicitado; não antecipe os demais.
 - Inspecione o estado do Git, o POM, os arquivos, migrações e dependências antes de editar.
+- Por padrão, crie branches de trabalho a partir de `develop` e abra pull requests com destino a `develop`; só use outro destino quando o usuário solicitar.
+- Ao iniciar a API localmente, use a porta `8081` (configurável por `SERVER_PORT`).
 - Quando uma alteração coerente estiver concluída e revisada, faça um commit se o projeto estiver em Git e o commit for apropriado; preserve mudanças alheias/incompletas e informe o hash. Não crie commits se não houver repositório Git.
 - Preserve alterações locais e migrações aplicadas. Nunca reescreva uma migração já aplicada.
 - Use DTOs na fronteira HTTP; não exponha entidades JPA.
