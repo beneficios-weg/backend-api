@@ -1,0 +1,48 @@
+# Documentação da API WEG Benefits
+
+Esta pasta é a referência de planejamento e integração do back-end. Ela não substitui o código, o POM, as migrações ou a especificação OpenAPI gerada pela aplicação.
+
+## Referências de planejamento preservadas do remoto
+
+Os documentos abaixo vieram do histórico `main` de 29/09/2026 e foram mantidos. Eles registram o
+planejamento original; afirmações de que não havia stack, código ou autenticação são snapshots
+históricos. Para o estado atual, consulte `../AGENTS.md`, `../README.md`, este índice, o contrato e o
+registro de decisões.
+
+- [`visao-geral.md`](visao-geral.md)
+- [`estado-atual.md`](estado-atual.md)
+- [`arquitetura-backend.md`](arquitetura-backend.md)
+- [`modelo-dados.md`](modelo-dados.md)
+- [`contrato-api.md`](contrato-api.md)
+- [`autenticacao.md`](autenticacao.md)
+- [`visitas-e-geolocalizacao.md`](visitas-e-geolocalizacao.md)
+- [`integracao-mobile.md`](integracao-mobile.md)
+- [`testes-backend.md`](testes-backend.md)
+- [`decisoes-abertas.md`](decisoes-abertas.md)
+- [`relatorio-consolidacao.md`](relatorio-consolidacao.md)
+- [`../AI_CONTEXT.md`](../AI_CONTEXT.md)
+
+## Documentos
+
+- `implementation-plan.md`: arquitetura proposta, módulos, ordem, entregas e critérios de conclusão.
+- `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
+- `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
+- `implementation-log.md`: estado real das etapas, baseado em mudanças e validações efetivamente realizadas.
+
+## Como manter estes documentos
+
+Antes de cada módulo, o agente deve ler [`../AGENTS.md`](../AGENTS.md), [`../README.md`](../README.md), este índice, o plano e o registro de decisões; para mudanças de API, deve ler também o contrato. Deve inspecionar o código e as migrações do módulo. Ao terminar, atualiza o log, o contrato se necessário e devolve ao usuário o relatório previsto em `../AGENTS.md`.
+
+O usuário trará esse relatório à conversa de planejamento. A conversa atualizará as recomendações e o próximo módulo; não se deve assumir que o contexto foi sincronizado sem receber o relatório.
+
+## Estado inicial registrado
+
+Com base no relato da equipe em 16/10/2026: projeto Spring Boot 4.1.1 / Java 21, PostgreSQL 17 em desenvolvimento local, Flyway, Actuator e OpenAPI. A aplicação iniciou em `localhost:8081` após o PostgreSQL estar disponível. Os pacotes previstos/plantados são `config`, `common`, `identity`, `catalog` e `engagement`. Ainda não há funcionalidades de negócio confirmadas como implementadas. Reconfirme o repositório antes de tomar este estado como atual.
+
+## Estado após a fundação parcial de Identity — 2026-10-19
+
+Identity já tem migração de usuários/sessões, login por username ou e-mail, logout, perfil próprio, rotas administrativas de usuários e CLI interativo para o primeiro ADMIN. Consulte o contrato para rotas; o log registra as verificações realmente executadas. Catálogo e engagement continuam sem funcionalidades.
+
+## Decisões de Identity atualizadas
+
+O primeiro ADMIN será provisionado via CLI; o sistema gera ID/timestamps e cria essa conta ativa com papel ADMIN. O CLI coleta a senha em prompt interativo sem eco. Novas contas pelo painel começam ativas como COLLABORATOR. Há somente ADMIN e COLLABORATOR; ADMIN pode criar ADMINs, editar qualquer conta, promover COLLABORATOR para ADMIN, usar favoritos/visitas próprios e desativar somente colaboradores; não pode rebaixar ADMIN. COLLABORATOR não altera papéis. Não haverá cadastro próprio nem redefinição de senha. Login aceita username único ou e-mail com senha; usernames são ASCII minúsculos normalizados, e os e-mails ficam restritos a `gmail.com` e `estudante.sesisenai.org.br`. Senhas aceitam qualquer caractere e têm de 6 a 72 caracteres. A autenticação planejada é por sessão server-side sem expiração automática, armazenada no PostgreSQL e com cookie persistente; logout, desativação ou revogação encerram acesso. A atividade aceita o risco de não adicionar um fluxo CSRF dedicado. A allowlist CORS já existente será usada somente se um cliente web for publicado em origem diferente da API; CORS de navegador não se aplica ao mobile nativo. O envio será SMTP do Gmail com senha de app, como `wegbenefits@gmail.com`; a senha exige verificação em duas etapas e ficará fora do repositório. A conta só será criada quando o Gmail aceitar o envio; erro SMTP significa nenhuma conta e aviso ao ADMIN. Veja as pendências no `decision-register.md`.
