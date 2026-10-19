@@ -136,6 +136,14 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Problemas/riscos restantes:** SMTP depende de `MAIL_APP_PASSWORD` externo e não foi exercitado. E-mail aceito externamente seguido de falha no commit pode entregar credenciais de conta não persistida. Sessão sem expiração e ausência de CSRF dedicado são riscos aceitos para a atividade, a rever antes de exposição pública. Rate limiting não foi implementado. Compilador reporta uso de API deprecated em `IdentityService`; build passa, mas a API deve ser revisada. A porta 8080 permanece ocupada por processo desconhecido e não foi encerrada.
 - **Próxima dependência/módulo:** Repetir startup HTTP fora da restrição de socket do ambiente e validar health/OpenAPI e fluxos manuais; SMTP real exige a senha de app externa. Em seguida, Catalog: fechar modelo antes de criar migrações.
 
+### Preferências de fluxo Git e execução local — 2026-10-19
+
+- **Objetivo e estado:** Registrar que novas pull requests devem ter `develop` como base e que a aplicação local deve iniciar na porta `8081`.
+- **Arquivos alterados:** `AGENTS.md`, `README.md`, `src/main/resources/application.properties` e este log.
+- **Comportamento:** `server.port` usa `SERVER_PORT` com default `8081`; documentação de execução e endpoints foi atualizada. Instruções de trabalho agora orientam abrir PRs para `develop` por padrão.
+- **Validação:** Preferência aplicada em branch criada de `origin/develop` após confirmar que o commit da fundação já está integrado a `develop`. Nenhum teste foi executado para essa alteração de configuração/documentação.
+- **Próximo passo:** Para a próxima mudança de código, partir de `develop`, iniciar na porta 8081 e abrir PR para `develop`.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
