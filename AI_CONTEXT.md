@@ -1,5 +1,11 @@
 # Contexto para agentes — WEG Benefits API
 
+> Atualização de 19/10/2026: o estado descrito abaixo em 29/09/2026 é um snapshot histórico.
+> O projeto agora usa Java 21, Spring Boot 4.1.1, Maven e PostgreSQL; Identity está parcialmente
+> implementado. Leia `AGENTS.md` e `docs/README.md` para instruções atuais e `docs/implementation-log.md`
+> para validações reais. Em conflito, preserve esta referência histórica e siga as decisões atuais
+> registradas em `docs/decision-register.md` e o contrato efetivamente implementado.
+
 ## Limites do repositório
 
 - Este é o repositório exclusivo do Backend (`weg-benefits-api` / `backend-api`).
