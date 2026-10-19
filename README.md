@@ -86,9 +86,11 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 - OpenAPI JSON: `http://localhost:8081/v1/api-docs`
 - Swagger UI: `http://localhost:8081/swagger-ui.html`
 
-Only Actuator health is exposed. Health responses do not include component details. Flyway creates
-the Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement
-tables exist yet.
+Only Actuator health is exposed. Health responses do not include component details, and the aggregate
+health check covers the application/database rather than SMTP. SMTP is required for account creation;
+invalid Gmail credentials make that operation fail even when API health is `UP`. Flyway creates the
+Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement tables exist
+yet.
 
 ## Initial package boundaries
 

@@ -144,6 +144,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Validação:** Preferência aplicada em branch criada de `origin/develop` após confirmar que o commit da fundação já está integrado a `develop`. Nenhum teste foi executado para essa alteração de configuração/documentação.
 - **Próximo passo:** Para a próxima mudança de código, partir de `develop`, iniciar na porta 8081 e abrir PR para `develop`.
 
+### Ajuste do health check e diagnóstico SMTP — 2026-10-19
+
+- **Objetivo e estado:** Evitar que credenciais SMTP inválidas tornem o health agregado da API indisponível quando aplicação e banco estão operacionais.
+- **Arquivos alterados:** `src/main/resources/application.properties`, `README.md` e este log.
+- **Comportamento:** Desativado o `MailHealthIndicator` agregado com `management.health.mail.enabled=false`. O envio SMTP continua obrigatório no cadastro e no provisionamento de usuários; falha do Gmail continua impedindo a criação da conta.
+- **Diagnóstico:** O log do usuário confirma que a aplicação iniciou em `8081`, conectou ao PostgreSQL 17.11 e validou a migração V1. A chamada ao health retornou 503 porque o Gmail rejeitou a autenticação SMTP (`535 BadCredentials`).
+- **Validação:** `mvnw test` com JDK Microsoft 21.0.12.1 passou: 1 teste existente (`contextLoads`), 0 falhas/erros. Uma tentativa de iniciar HTTP temporariamente na porta 18081 carregou contexto, banco e Flyway, mas Tomcat não abriu o seletor NIO devido a `SocketException: Invalid argument: connect` no ambiente. Portanto, o status HTTP após a mudança ainda precisa ser confirmado no PowerShell local após reiniciar.
+- **Limitações e riscos restantes:** A disponibilidade SMTP não aparece no health agregado; verificar o SMTP no fluxo de criação de conta. As credenciais inválidas precisam ser corrigidas antes de criar usuários ou provisionar o ADMIN.
+- **Próximo passo:** Reiniciar com Java 21 e validar `/actuator/health` na porta 8081. Configurar uma senha de app válida antes de testar criação de usuários.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
