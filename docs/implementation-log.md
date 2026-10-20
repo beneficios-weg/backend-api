@@ -136,6 +136,44 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Problemas/riscos restantes:** SMTP depende de `MAIL_APP_PASSWORD` externo e não foi exercitado. E-mail aceito externamente seguido de falha no commit pode entregar credenciais de conta não persistida. Sessão sem expiração e ausência de CSRF dedicado são riscos aceitos para a atividade, a rever antes de exposição pública. Rate limiting não foi implementado. Compilador reporta uso de API deprecated em `IdentityService`; build passa, mas a API deve ser revisada. A porta 8080 permanece ocupada por processo desconhecido e não foi encerrada.
 - **Próxima dependência/módulo:** Repetir startup HTTP fora da restrição de socket do ambiente e validar health/OpenAPI e fluxos manuais; SMTP real exige a senha de app externa. Em seguida, Catalog: fechar modelo antes de criar migrações.
 
+### Preferências de fluxo Git e execução local — 2026-10-19
+
+- **Objetivo e estado:** Registrar que novas pull requests devem ter `develop` como base e que a aplicação local deve iniciar na porta `8081`.
+- **Arquivos alterados:** `AGENTS.md`, `README.md`, `src/main/resources/application.properties` e este log.
+- **Comportamento:** `server.port` usa `SERVER_PORT` com default `8081`; documentação de execução e endpoints foi atualizada. Instruções de trabalho agora orientam abrir PRs para `develop` por padrão.
+- **Validação:** Preferência aplicada em branch criada de `origin/develop` após confirmar que o commit da fundação já está integrado a `develop`. Nenhum teste foi executado para essa alteração de configuração/documentação.
+- **Próximo passo:** Para a próxima mudança de código, partir de `develop`, iniciar na porta 8081 e abrir PR para `develop`.
+
+### Ajuste do health check e diagnóstico SMTP — 2026-10-19
+
+- **Objetivo e estado:** Evitar que credenciais SMTP inválidas tornem o health agregado da API indisponível quando aplicação e banco estão operacionais.
+- **Arquivos alterados:** `src/main/resources/application.properties`, `README.md` e este log.
+- **Comportamento:** Desativado o `MailHealthIndicator` agregado com `management.health.mail.enabled=false`. O envio SMTP continua obrigatório no cadastro e no provisionamento de usuários; falha do Gmail continua impedindo a criação da conta.
+- **Diagnóstico:** O log do usuário confirma que a aplicação iniciou em `8081`, conectou ao PostgreSQL 17.11 e validou a migração V1. A chamada ao health retornou 503 porque o Gmail rejeitou a autenticação SMTP (`535 BadCredentials`).
+- **Validação:** `mvnw test` com JDK Microsoft 21.0.12.1 passou: 1 teste existente (`contextLoads`), 0 falhas/erros. Uma tentativa de iniciar HTTP temporariamente na porta 18081 carregou contexto, banco e Flyway, mas Tomcat não abriu o seletor NIO devido a `SocketException: Invalid argument: connect` no ambiente. Portanto, o status HTTP após a mudança ainda precisa ser confirmado no PowerShell local após reiniciar.
+- **Limitações e riscos restantes:** A disponibilidade SMTP não aparece no health agregado; verificar o SMTP no fluxo de criação de conta. As credenciais inválidas precisam ser corrigidas antes de criar usuários ou provisionar o ADMIN.
+- **Próximo passo:** Reiniciar com Java 21 e validar `/actuator/health` na porta 8081. Configurar uma senha de app válida antes de testar criação de usuários.
+
+### Decisões de escopo do Catalog — 2026-10-20
+
+- **Objetivo e estado:** Consolidar o modelo revisado e as decisões para preparar a primeira implementação de Catalog. Nenhuma funcionalidade ou migração de Catalog foi criada nesta atualização.
+- **Arquivos alterados:** `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md`, `docs/modelo-de-dados.md` e este log.
+- **Comportamento/contrato planejado:** Benefício não tem nome/título e cada benefício pertence a um estabelecimento; um estabelecimento pode ter vários benefícios. A primeira versão não armazena nem retorna horários. Fachada aceita URL HTTPS opcional. Desativação será lógica, preservando referências e ocultando itens inativos das consultas normais. Categorias terão cor de paleta do projeto e chave Iconify; mobile baixa apenas ícones selecionados durante sincronização online e mantém cache local para uso offline.
+- **Decisões e divergências:** O plano/contrato anteriores ainda mencionavam horários, marcas e distância; foram alinhados para excluir horários e não antecipar marcas ou busca espacial. O conteúdo não especifica nulabilidade/limites de `publico`, `contact` e `discount`; P-007 permanece aberto apenas para esses detalhes. PostGIS permanece pendente, mas não bloqueia CRUD sem proximidade.
+- **Validações executadas e resultados:** Inspecionados estado Git limpo, POM, plano, registro, contrato, código e migrações. Nenhum teste foi criado ou executado e nenhuma compilação foi executada. A tentativa de criar branch falhou porque o ambiente negou escrita em `.git` (`Permission denied`); os arquivos de documentação estão editados na branch existente.
+- **Limitações e riscos restantes:** Ícones e imagens recém-adicionados só ficam disponíveis offline após o cliente sincronizar e armazenar cache enquanto estiver online. O cliente mobile não está neste repositório. Ainda é necessário fechar P-007 antes da migração de Benefit; valores concretos da paleta também precisam ser definidos no contrato/implementação.
+- **Próxima dependência/módulo:** Fechar limites/nulabilidade de Benefit e definir a paleta; depois implementar Catalog em branch de trabalho baseada em `develop`, sem horários, Brand ou busca espacial.
+
+### Catalog — primeira implementação — 2026-10-20
+
+- **Objetivo e estado:** Implementar o modelo inicial, administração e leitura autenticada do catálogo; código preparado e compilado, execução com PostgreSQL ainda não validada.
+- **Arquivos criados/alterados:** Classes JPA, repositórios, DTOs, serviço e controllers em `src/main/java/com/weg/benefits/catalog/`; `src/main/resources/db/migration/V2__catalog.sql`; handler comum de conflito HTTP; contrato, registro de decisões, modelo, plano e este log.
+- **Comportamento/rotas:** CRUD administrativo (GET paginado/detalhe, POST, PATCH e POST deactivation) para `/v1/admin/categories`, `/services`, `/establishments` e `/benefits`; leitura ativa em `/v1/categories`, `/v1/categories/options`, `/v1/services`, `/v1/establishments`, `/v1/establishments/{id}` e `/v1/establishments/{id}/benefits`. A configuração de segurança existente exige ADMIN para `/v1/admin/**` e sessão para as demais rotas. V2 cria Category, Service, Establishment, relação N:N e Benefit com desativação lógica e UUID.
+- **Decisões/divergências:** D-041 confirma todos os campos de Benefit obrigatórios. D-042 confirma UUID para as quatro entidades Catalog. `audience`, `contact` e `discount` usam TEXT porque seus limites máximos continuam sem decisão (P-007). Não foram incluídos horários, Brand, PostGIS ou busca por distância.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou. Nenhum teste foi adicionado ou executado. `mvnw.cmd spring-boot:run` foi tentado em 8081; a inicialização não conectou ao banco porque `localhost:5432` recusou a conexão. `docker compose ps` confirmou que o Docker Desktop engine não está acessível. A migração V2 não foi aplicada e endpoints não foram exercitados.
+- **Limitações/riscos:** Limites de público/contato/desconto seguem pendentes; valores da paleta de oito cores são a paleta inicial do projeto; runtime, Flyway V2 e autorização ainda precisam de verificação com PostgreSQL em execução. Commit `bca3426` foi criado na branch `codex/catalog-foundation` e publicado em `origin`; a PR para `develop` ainda não foi aberta porque o navegador estava sem sessão GitHub e o `gh` CLI não está instalado.
+- **Próxima etapa:** Iniciar Docker/PostgreSQL, executar API na porta 8081 e validar migração/health/endpoints sem executar testes automatizados; resolver P-007 antes de impor limites a Benefit; abrir a PR para `develop` após autenticar GitHub/conectar a integração.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
