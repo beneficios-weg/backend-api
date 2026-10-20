@@ -65,6 +65,12 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
 | P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
 | P-016 | Qual o limite real de horas/equipe dedicado à API? | Plano original citava 30 horas para o projeto inteiro; repartir com mobile e desktop | Planejamento |
+| P-017 | A revisão de 2026-10-20 substitui D-042 e muda os IDs de Category, Service, Establishment e Benefit de UUID para inteiro? | Confirmar que a equipe aceita a mudança incompatível para a API e que haverá migração Flyway nova, sem alterar V2 | Antes da migração de reconciliação do Catalog |
+| P-018 | A cardinalidade revisada é realmente exatamente um Benefit por Establishment (1:1), substituindo D-036 e a relação 1:N atual? | Confirmar o significado dos dois lados e a regra para dados existentes; não criar `UNIQUE` sem essa confirmação | Antes da migração de reconciliação do Catalog |
+| P-019 | Discount será entidade separada 1:N por Benefit, substituindo o texto `benefit.discount`? Todo Benefit deve ter pelo menos um Discount? | Confirmar nulabilidade/cardinalidade e como converter textos de desconto existentes sem perder significado; novos campos propostos: valor 2–15 e descrição 10–300 | Antes da migração de reconciliação do Catalog |
+| P-020 | A seleção de ícones deixa de permitir pesquisa no Iconify e passa a uma lista fechada oferecida pelo sistema, substituindo D-040? | Confirmar a fonte/lista permitida e se a sincronização/cache offline continuam necessários | Antes de alterar validação/contrato de Category |
+| P-021 | A regra de username passa a aceitar somente letras minúsculas, substituindo D-022 e o validador atual? | Confirmar se dígitos e `.`, `-`, `_` continuam permitidos; o PDF não detalha a normalização | Antes de alterar Identity |
+| P-022 | Estado deixa de ser somente UF com duas letras e passa a texto de 2–75 caracteres, como diz a revisão? | Confirmar exemplos e se persistência/validação deve aceitar nome de estado além da sigla | Antes de alterar validação/contrato de Establishment |
 
 ## Registro de alteração
 

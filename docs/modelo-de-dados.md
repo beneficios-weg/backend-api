@@ -2,7 +2,24 @@
 
 ## Estado
 
-Este documento consolida a modelagem revisada fornecida pela equipe e as decisões registradas em `decision-register.md`. As entidades de Catalog são planejamento até serem implementadas por migrações Flyway. O código e as migrações continuam sendo a fonte do estado executado.
+Este documento registra a modelagem aprovada anteriormente e, abaixo, a nova revisão recebida em 2026-10-20, ainda em reconciliação. O código e as migrações continuam sendo a fonte do estado executado; conflitos com decisões aprovadas não são aplicados até revisão.
+
+## Revisão recebida em 2026-10-20 — pendente de reconciliação
+
+O documento de referência [`WEG Benefits — Modelagem revisada`](referencia/WEG-Benefits-Modelagem-revisada.pdf) propõe:
+
+- IDs inteiros para Category, Establishment, Benefit, Discount e Service.
+- Uma relação 1:1 entre Establishment e Benefit, e uma relação 1:N entre Benefit e Discount.
+- Uma entidade Discount com `value` (2–15 caracteres), `description` (10–300 caracteres) e referência ao Benefit; `discount`, antes um campo textual em Benefit, deixa de aparecer como atributo direto.
+- Ícone de Category selecionado entre opções oferecidas pelo próprio sistema.
+- Username descrito como texto de 3–75 caracteres com apenas letras minúsculas; Estado como texto de 2–75 caracteres.
+
+Esta revisão diverge das decisões anteriores D-022, D-036, D-040 e D-042, além do modelo de Benefit implementado em V2. O novo material foi preservado, mas não foi tratado como autorização para alterar silenciosamente essas decisões. Consulte P-017 a P-022 em `decision-register.md` antes de uma migração de reconciliação.
+
+### Estado implementado antes da reconciliação
+
+- A migração `V2__catalog.sql` já define Category, Service, Establishment e Benefit com UUID; Benefit possui um campo textual `discount`, e vários benefícios podem pertencer ao mesmo estabelecimento.
+- A migração aplicada nunca deve ser reescrita. Mudanças confirmadas deverão ser feitas em migração Flyway nova, preservando dados e considerando a quebra de IDs usada pela API/clientes.
 
 ## Catalog aprovado para a primeira versão
 
