@@ -41,13 +41,17 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-033 | Não será adicionada configuração CORS além da allowlist já existente, salvo necessidade do cliente web | Confirmada como preferência atual; CORS não se aplica a cliente mobile nativo e só será necessário para navegador em origem diferente |
 | D-034 | Para manter sessão após fechar o cliente ou reiniciar a API, persistir a sessão no PostgreSQL e manter cookie persistente sem prazo automático até logout/revogação | Proposta aceita pelo usuário |
 | D-035 | A rota para desativação de usuário será `POST /v1/admin/users/{id}/deactivation` | Confirmada pelo usuário em 2026-10-19 |
-| D-036 | Benefício não terá nome/título próprio; cada benefício pertence a exatamente um estabelecimento, e um estabelecimento pode ter vários benefícios | Confirmada pelo usuário com base na modelagem revisada |
+| D-036 | Benefício não terá nome/título próprio; cada benefício pertence a exatamente um estabelecimento, e um estabelecimento pode ter vários benefícios | Parcialmente supersedida por D-044: permanece sem nome/título e pertence a um estabelecimento, mas a cardinalidade agora é 1:1 |
 | D-037 | Horários de funcionamento ficam fora da primeira versão da API: não serão armazenados, consultados nem retornados | Confirmada pelo usuário |
 | D-038 | A fachada pode ter URL HTTPS opcional informada pelo ADMIN; a API não fará upload nem armazenará o arquivo de imagem | Proposta aceita pelo usuário; o cliente deve baixar e manter em cache imagens necessárias para uso offline |
 | D-039 | Itens do catálogo serão desativados sem exclusão física; registros e relações históricas serão preservados, e itens inativos não aparecem nas consultas normais do catálogo | Proposta aceita pelo usuário; regras de sincronização offline de visitas ficam para Engagement |
 | D-040 | Categorias usam cor de uma paleta definida pelo projeto e um identificador de ícone escolhido no Iconify. O mobile baixa apenas ícones selecionados ainda ausentes durante a sincronização online e os mantém em cache para uso offline | Confirmada pelo usuário; Iconify não é fonte disponível durante uso offline antes do primeiro download do ícone |
-| D-041 | Todos os campos de Benefit — público, instruções de participação, contato, desconto, condições e estabelecimento — são obrigatórios | Confirmada pelo usuário; para `público`, `contato` e `desconto` não foi definido tamanho máximo |
+| D-041 | Todos os campos de Benefit — público, instruções de participação, contato, desconto, condições e estabelecimento — são obrigatórios | Confirmada originalmente pelo usuário; após D-045, desconto é uma entidade separada e cada Benefit deve ter pelo menos um Discount |
 | D-042 | Category, Service, Establishment e Benefit usarão identificadores UUID | Confirmada pelo usuário em 2026-10-20; IDs de usuários permanecem inteiros conforme D-017 |
+| D-043 | A revisão da modelagem mantém UUID para Category, Service, Establishment e Benefit; a nova entidade Discount seguirá UUID conforme o padrão do catálogo | Confirmada pelo usuário em 2026-10-20 |
+| D-044 | Cada Establishment terá exatamente um Benefit, substituindo a cardinalidade 1:N registrada em D-036 | Confirmada pelo usuário em 2026-10-20; o fluxo de criação ainda precisa assegurar a participação obrigatória |
+| D-045 | Discount será entidade própria 1:N por Benefit; cada Benefit terá pelo menos um Discount. `value` terá 2–15 caracteres e `description` 10–300 | Confirmada pelo usuário em 2026-10-20; a migração deve preservar os descontos legados |
+| D-046 | Permanecem as decisões existentes de Iconify (D-040), username (D-022) e Estado como sigla UF; os trechos divergentes do PDF não as substituem | Confirmada pelo usuário em 2026-10-20 |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -55,7 +59,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 |---|---|---|---|
 | P-028 | O cliente desktop será navegador em origem diferente da API? | Preferir mesma origem ou cliente nativo; se for cross-origin no navegador, usar allowlist CORS explícita com credenciais. A fundação já configura CORS por allowlist | Integração |
 | P-006 | PostGIS será habilitado no banco local e no ambiente de entrega? | Recomendado para proximidade; definir imagem/extensão, migração, índice e custo operacional | Discovery |
-| P-007 | Fechar limites máximos de `publico`, `contact` e `discount` em Benefit | Obrigatoriedade está fechada (D-041); proposta atual é não impor limite de domínio, persistindo como texto PostgreSQL | Revisão do modelo; não bloqueia Catalog com campos textuais |
+| P-007 | Fechar limites máximos de `publico` e `contact` em Benefit | Obrigatoriedade está fechada (D-041); proposta atual é não impor limite de domínio, persistindo como texto PostgreSQL. Limites de Discount foram definidos em D-045 | Revisão do modelo; não bloqueia Catalog com campos textuais |
 | P-008 | Brand faz parte do MVP? Quais campos teria? | Não incluir Brand sem necessidade aprovada; o documento revisado inclui Service | Pode ser adiado; não bloqueia Catalog sem Brand |
 | P-009 | Como representar horários especiais, feriados, intervalos e virada de dia? | Horários estão fora da primeira versão da API (D-037) | Não aplicável nesta etapa; reabrir se horários forem aprovados |
 | P-010 | Como arquivar unidade com favoritos/visitas existentes? | Desativação lógica, preservando linhas e relações; ocultar inativos das consultas comuns (D-039) | Fechado para Catalog; sincronização de visitas offline depende de P-011 |
@@ -65,12 +69,15 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
 | P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
 | P-016 | Qual o limite real de horas/equipe dedicado à API? | Plano original citava 30 horas para o projeto inteiro; repartir com mobile e desktop | Planejamento |
-| P-017 | A revisão de 2026-10-20 substitui D-042 e muda os IDs de Category, Service, Establishment e Benefit de UUID para inteiro? | Confirmar que a equipe aceita a mudança incompatível para a API e que haverá migração Flyway nova, sem alterar V2 | Antes da migração de reconciliação do Catalog |
-| P-018 | A cardinalidade revisada é realmente exatamente um Benefit por Establishment (1:1), substituindo D-036 e a relação 1:N atual? | Confirmar o significado dos dois lados e a regra para dados existentes; não criar `UNIQUE` sem essa confirmação | Antes da migração de reconciliação do Catalog |
-| P-019 | Discount será entidade separada 1:N por Benefit, substituindo o texto `benefit.discount`? Todo Benefit deve ter pelo menos um Discount? | Confirmar nulabilidade/cardinalidade e como converter textos de desconto existentes sem perder significado; novos campos propostos: valor 2–15 e descrição 10–300 | Antes da migração de reconciliação do Catalog |
-| P-020 | A seleção de ícones deixa de permitir pesquisa no Iconify e passa a uma lista fechada oferecida pelo sistema, substituindo D-040? | Confirmar a fonte/lista permitida e se a sincronização/cache offline continuam necessários | Antes de alterar validação/contrato de Category |
-| P-021 | A regra de username passa a aceitar somente letras minúsculas, substituindo D-022 e o validador atual? | Confirmar se dígitos e `.`, `-`, `_` continuam permitidos; o PDF não detalha a normalização | Antes de alterar Identity |
-| P-022 | Estado deixa de ser somente UF com duas letras e passa a texto de 2–75 caracteres, como diz a revisão? | Confirmar exemplos e se persistência/validação deve aceitar nome de estado além da sigla | Antes de alterar validação/contrato de Establishment |
+| P-017 | IDs numéricos substituem UUID para as entidades Catalog existentes? | Resolvido por D-043: os IDs atuais continuam UUID; nenhum ID de rota muda | Fechado |
+| P-018 | Cada Establishment terá exatamente um Benefit? | Resolvido por D-044; falta escolher se a associação é obrigatória já na criação do estabelecimento (P-023) | Fechado para a cardinalidade |
+| P-019 | Discount será separado e cada Benefit terá pelo menos um? | Resolvido por D-045; a preservação do legado segue em P-025 | Fechado para o modelo lógico |
+| P-020 | Os ícones deixarão de usar Iconify? | Resolvido por D-046: manter a abordagem Iconify aprovada anteriormente | Fechado |
+| P-021 | Username aceitará somente letras minúsculas? | Resolvido por D-046: manter a regra D-022 | Fechado |
+| P-022 | Estado aceitará nomes com 2–75 caracteres? | Resolvido por D-046: manter somente sigla UF | Fechado |
+| P-023 | Estabelecimento precisa ser criado atomicamente com seu único Benefit e pelo menos um Discount, ou pode existir temporariamente sem Benefit? | Recomenda-se criar/editar o conjunto numa transação para garantir 1:1 e a participação mínima; confirmar antes de mudar o contrato HTTP | Antes de atualizar rotas/DTOs de Catalog |
+| P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Recomenda-se ambos obrigatórios, conforme os campos definidos no modelo; confirmar antes da migração | Antes da migração V3 |
+| P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | Inspecionar contagens; não descartar benefícios múltiplos nem inventar divisão do texto legado em valor/descrição | Antes da migração V3 |
 
 ## Registro de alteração
 
@@ -98,6 +105,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | Ícones de categoria serão selecionados no Iconify; mobile sincroniza e armazena em cache somente os ícones usados para suportar uso offline | Usuário |
 | 2026-10-20 | Todos os campos de Benefit são obrigatórios; limites para público, contato e desconto não foram especificados e continuam abertos | Usuário |
 | 2026-10-20 | IDs de Category, Service, Establishment e Benefit serão UUID | Usuário |
+| 2026-10-20 | UUIDs existentes mantidos; Establishment terá exatamente um Benefit e Benefit terá um ou mais Discounts separados; Iconify, username atual e sigla UF permanecem | Usuário |
 
 ## Pontos de implementação pendentes
 

@@ -27,6 +27,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 - A localização em segundo plano é detectada pelo cliente mobile e seus módulos nativos. A API recebe o evento de visita final e não mantém trilhas contínuas de GPS.
 - O app cliente mantém cache e fila offline. A API deve aceitar reenvio idempotente das operações aprovadas.
 
+**Decisões do modelo Catalog — revisão de 2026-10-20:** Category, Service, Establishment e Benefit mantêm UUIDs conforme D-042; a nova entidade Discount seguirá o padrão UUID do projeto. Cada Establishment terá exatamente um Benefit e cada Benefit terá pelo menos um Discount, com `value` de 2–15 caracteres e `description` de 10–300. Permanecem Iconify para ícones de categoria, a validação de username já aprovada em D-022 e Estado como sigla UF. O código/V2 ainda representa o modelo anterior: implementar a reconciliação em migração nova, sem editar V2 e sem descartar dados.
+
 ## Regras de implementação
 
 **Atualização de Identity — 2026-10-19:** as rotas de autenticação por sessão e administração de usuários estão implementadas parcialmente; a desativação é `POST /v1/admin/users/{id}/deactivation` conforme D-035. Considere obsoleta a frase acima que descreve o código como stateless e sem autenticação. Consulte `docs/implementation-log.md` para o estado validado. As demais regras de não inferir pendências permanecem vigentes.

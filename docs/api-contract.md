@@ -7,6 +7,8 @@
 - Prefixo `/v1`; JSON UTF-8; HTTPS em ambientes compartilhados.
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
 - IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
+
+**Revisão de modelo aprovada, ainda não refletida neste contrato implementado:** D-044/D-045 definem Establishment 1:1 Benefit e Benefit 1:N Discount, com no mínimo um desconto por benefício. A implementação atual ainda usa 1:N Benefit e o campo textual `discount` em Benefit; P-023 a P-025 bloqueiam a atualização segura de DTOs/rotas e da migração.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -60,7 +62,7 @@ Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
 
-Cada família tem consulta/listagem, criação, edição parcial e desativação lógica, protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. Todos os campos de Benefit, inclusive sua relação com Establishment, são obrigatórios; público, contato e desconto usam TEXT enquanto seus limites seguem pendentes (P-007). Benefit não tem nome/título.
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. Na V2, Benefit contém o texto `discount`, seus campos atuais são obrigatórios, e público/contato/desconto são TEXT. Isso ainda não reflete D-044/D-045; Benefit não tem nome/título.
 
 ## Ações pessoais — Engagement
 

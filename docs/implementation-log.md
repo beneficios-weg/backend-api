@@ -184,6 +184,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos restantes:** Não é seguro converter `UUID` em inteiros nem separar o texto de desconto em valor/descrição sem confirmar impacto na API/clientes e definir a preservação de dados existentes. Também faltam definições inequívocas para a cardinalidade e para as regras de username, ícones e estado.
 - **Próxima dependência/módulo:** Resolver P-017 a P-022 com a equipe; então especificar uma migração nova de reconciliação de Catalog e atualizar entidades, DTOs e contrato, preservando V2.
 
+### Decisões após revisão do modelo Catalog — 2026-10-20
+
+- **Objetivo e estado:** Registrar as respostas da equipe à modelagem atualizada. Decisões de produto consolidadas; código e banco ainda não reconciliados.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhuma classe ou migração foi alterada.
+- **Modelo/contrato:** IDs do catálogo continuam UUID; Establishment e Benefit têm relação 1:1; cada Benefit terá um ou mais Discounts. Iconify, username D-022 e UF como sigla permanecem.
+- **Decisões e pendências:** Registradas D-043 a D-046; P-017 a P-022 foram resolvidas. P-023 define se Establishment pode existir temporariamente sem Benefit, P-024 confirma obrigatoriedade de value/description, e P-025 verifica/preserva dados já gravados. A resposta ao item 3 foi interpretada como “pelo menos um Discount por Benefit”.
+- **Validações executadas:** Documentação revisada e diff verificado. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** V2 ainda permite múltiplos benefícios por estabelecimento e mantém `discount` como texto. Não alterá-la; criar migração nova após fechar o fluxo de criação e o mapeamento dos dados.
+- **Próxima dependência/módulo:** Confirmar P-023 a P-025; então atualizar Catalog com migração Flyway nova, entidades, DTOs e contrato.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
