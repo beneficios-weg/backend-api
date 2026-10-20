@@ -6,7 +6,7 @@
 
 - Prefixo `/v1`; JSON UTF-8; HTTPS em ambientes compartilhados.
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
-- IDs opacos; UUID é recomendado, decisão ainda pendente antes da primeira migração.
+- IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -35,26 +35,32 @@ O ADMIN cadastrará a senha comum da conta; não haverá senha temporária, troc
 
 ## Leitura de catálogo — Catalog
 
+Implementado na etapa Catalog:
+
 - `GET /v1/categories`
-- `GET /v1/brands` se marcas/franquias forem aprovadas
-- `GET /v1/establishments?query=&categoryId=&brandId=&lat=&lon=&radiusM=&sort=&cursor=`
+- `GET /v1/services` (opções ativas usadas no catálogo)
+- `GET /v1/establishments?query=&categoryId=&serviceId=&page=&size=`
 - `GET /v1/establishments/{id}`
 - `GET /v1/establishments/{id}/benefits` se não estiverem incluídos no detalhe
 
-Sem coordenadas, busca por texto/categoria ainda funciona e distância vem ausente. Ordenação por proximidade exige coordenadas válidas. Lista deve limitar resultados e não depender de serviço de mapas externo.
+O catálogo requer sessão autenticada. Listas aceitam `page` e `size`; consultas administrativas têm máximo de 100 itens por página e a busca pública de estabelecimentos limita a 50. `GET /v1/categories/options` retorna a paleta de cores permitida e indica Iconify como fonte de busca de ícones.
+
+Estabelecimentos, categorias, benefícios e serviços inativos não aparecem nas consultas normais. Benefícios são retornados sem nome/título e vinculados a um único estabelecimento. Ícones de categoria são identificadores Iconify; o cliente mobile baixa somente ícones usados ainda ausentes durante sincronização online e mantém cópia local para uso offline. A URL HTTPS opcional da fachada pode ser armazenada em cache pelo cliente. Não há horários, rota de marcas ou consulta de proximidade nesta versão. Busca espacial depende da decisão sobre PostGIS (P-006).
 
 ## Administração de catálogo — Catalog/Admin
+
+Implementado para ADMIN, com paginação, criação, edição parcial e desativação lógica:
 
 Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 - `/v1/admin/categories`
-- `/v1/admin/brands`
+- `/v1/admin/services`
 - `/v1/admin/establishments`
 - `/v1/admin/benefits`
-- `/v1/admin/opening-hours`
-- `/v1/admin/products-services`
 
-Cada família terá consulta/listagem, criação, edição parcial e arquivamento. O desenho final de sub-recursos, campos e métodos HTTP depende do modelo aprovado. Evitar exclusão física de dados referenciados.
+As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
+
+Cada família tem consulta/listagem, criação, edição parcial e desativação lógica, protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. Todos os campos de Benefit, inclusive sua relação com Establishment, são obrigatórios; público, contato e desconto usam TEXT enquanto seus limites seguem pendentes (P-007). Benefit não tem nome/título.
 
 ## Ações pessoais — Engagement
 

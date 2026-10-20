@@ -41,6 +41,13 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-033 | Não será adicionada configuração CORS além da allowlist já existente, salvo necessidade do cliente web | Confirmada como preferência atual; CORS não se aplica a cliente mobile nativo e só será necessário para navegador em origem diferente |
 | D-034 | Para manter sessão após fechar o cliente ou reiniciar a API, persistir a sessão no PostgreSQL e manter cookie persistente sem prazo automático até logout/revogação | Proposta aceita pelo usuário |
 | D-035 | A rota para desativação de usuário será `POST /v1/admin/users/{id}/deactivation` | Confirmada pelo usuário em 2026-10-19 |
+| D-036 | Benefício não terá nome/título próprio; cada benefício pertence a exatamente um estabelecimento, e um estabelecimento pode ter vários benefícios | Confirmada pelo usuário com base na modelagem revisada |
+| D-037 | Horários de funcionamento ficam fora da primeira versão da API: não serão armazenados, consultados nem retornados | Confirmada pelo usuário |
+| D-038 | A fachada pode ter URL HTTPS opcional informada pelo ADMIN; a API não fará upload nem armazenará o arquivo de imagem | Proposta aceita pelo usuário; o cliente deve baixar e manter em cache imagens necessárias para uso offline |
+| D-039 | Itens do catálogo serão desativados sem exclusão física; registros e relações históricas serão preservados, e itens inativos não aparecem nas consultas normais do catálogo | Proposta aceita pelo usuário; regras de sincronização offline de visitas ficam para Engagement |
+| D-040 | Categorias usam cor de uma paleta definida pelo projeto e um identificador de ícone escolhido no Iconify. O mobile baixa apenas ícones selecionados ainda ausentes durante a sincronização online e os mantém em cache para uso offline | Confirmada pelo usuário; Iconify não é fonte disponível durante uso offline antes do primeiro download do ícone |
+| D-041 | Todos os campos de Benefit — público, instruções de participação, contato, desconto, condições e estabelecimento — são obrigatórios | Confirmada pelo usuário; para `público`, `contato` e `desconto` não foi definido tamanho máximo |
+| D-042 | Category, Service, Establishment e Benefit usarão identificadores UUID | Confirmada pelo usuário em 2026-10-20; IDs de usuários permanecem inteiros conforme D-017 |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -48,13 +55,13 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 |---|---|---|---|
 | P-028 | O cliente desktop será navegador em origem diferente da API? | Preferir mesma origem ou cliente nativo; se for cross-origin no navegador, usar allowlist CORS explícita com credenciais. A fundação já configura CORS por allowlist | Integração |
 | P-006 | PostGIS será habilitado no banco local e no ambiente de entrega? | Recomendado para proximidade; definir imagem/extensão, migração, índice e custo operacional | Discovery |
-| P-007 | Quais campos de Benefit são obrigatórios? Há nome, desconto, instruções, contato e condições? | Consolidar com documento revisado e protótipo | Catalog |
-| P-008 | Quais campos pertencem a Brand e ProductService? | Incluir somente se uma jornada do MVP os exigir | Catalog |
-| P-009 | Como representar horários especiais, feriados, intervalos e virada de dia? | Fechar regras antes da migração de horários | Catalog |
-| P-010 | Como arquivar unidade com favoritos/visitas existentes? | Preservar referências; ocultar arquivados da descoberta normal | Catalog |
+| P-007 | Fechar limites máximos de `publico`, `contact` e `discount` em Benefit | Obrigatoriedade está fechada (D-041); proposta atual é não impor limite de domínio, persistindo como texto PostgreSQL | Revisão do modelo; não bloqueia Catalog com campos textuais |
+| P-008 | Brand faz parte do MVP? Quais campos teria? | Não incluir Brand sem necessidade aprovada; o documento revisado inclui Service | Pode ser adiado; não bloqueia Catalog sem Brand |
+| P-009 | Como representar horários especiais, feriados, intervalos e virada de dia? | Horários estão fora da primeira versão da API (D-037) | Não aplicável nesta etapa; reabrir se horários forem aprovados |
+| P-010 | Como arquivar unidade com favoritos/visitas existentes? | Desativação lógica, preservando linhas e relações; ocultar inativos das consultas comuns (D-039) | Fechado para Catalog; sincronização de visitas offline depende de P-011 |
 | P-011 | Qual regra exata confirma visita e trata duplicidade? | Evento final do mobile com chave idempotente; definir janela e evidência mínima sem histórico GPS | Engagement |
 | P-012 | Dados disponíveis offline por quanto tempo e o que ocorre após expiração/desativação de conta? | Cache de leitura com prazo; fila de escrita identificável e sincronizada após autenticação | Mobile/Engagement |
-| P-013 | Fotos serão URLs pré-cadastradas ou upload com storage? | MVP pode guardar URL validada; upload só após escolher provedor | Catalog |
+| P-013 | Fotos serão URLs pré-cadastradas ou upload com storage? | URL HTTPS opcional, sem upload nesta versão (D-038) | Fechado para Catalog |
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
 | P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
 | P-016 | Qual o limite real de horas/equipe dedicado à API? | Plano original citava 30 horas para o projeto inteiro; repartir com mobile e desktop | Planejamento |
@@ -81,6 +88,10 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-19 | Senha de 6 a 72 caracteres; ADMIN pode promover COLLABORATOR, mas não rebaixar ADMIN; CLI solicita senha sem eco | Usuário |
 | 2026-10-19 | Preferência por sessão longa; propostas de 30 dias inativa/90 dias máximo e de CSRF/CORS registradas para avaliação, ainda não aprovadas | Usuário (preferência); proposta do assistente |
 | 2026-10-19 | Sessão sem expiração automática e persistida no PostgreSQL; senha aceita qualquer caractere; sem fluxo CSRF dedicado nesta atividade; CORS adicional apenas se o desktop web for cross-origin | Usuário |
+| 2026-10-20 | Modelagem revisada: benefício sem nome/título, relação estabelecimento 1:N benefício, sem horários, imagem de fachada opcional por URL e itens inativos preservados | Usuário |
+| 2026-10-20 | Ícones de categoria serão selecionados no Iconify; mobile sincroniza e armazena em cache somente os ícones usados para suportar uso offline | Usuário |
+| 2026-10-20 | Todos os campos de Benefit são obrigatórios; limites para público, contato e desconto não foram especificados e continuam abertos | Usuário |
+| 2026-10-20 | IDs de Category, Service, Establishment e Benefit serão UUID | Usuário |
 
 ## Pontos de implementação pendentes
 
