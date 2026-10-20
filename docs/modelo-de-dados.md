@@ -2,7 +2,7 @@
 
 ## Estado
 
-Este documento registra as decisões de modelagem e distingue o projeto aprovado do que o código já implementa. O código e as migrações continuam sendo a fonte do estado executado; a reconciliação aprovada em 2026-10-20 ainda não foi migrada para o código.
+Este documento registra as decisões de modelagem e distingue o projeto aprovado do que o código já implementa. A reconciliação foi implementada em código e na migração V3; a migração não foi executada neste trabalho.
 
 ## Revisão recebida em 2026-10-20 — decisões reconciliadas
 
@@ -14,18 +14,18 @@ O documento de referência [`WEG Benefits — Modelagem revisada`](referencia/WE
 - Ícone de Category selecionado entre opções oferecidas pelo próprio sistema.
 - Username descrito como texto de 3–75 caracteres com apenas letras minúsculas; Estado como texto de 2–75 caracteres.
 
-Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment terá exatamente um Benefit; cada Benefit terá pelo menos um Discount; `value` e `description` são obrigatórios. Benefícios e descontos são criados/editados na mesma tela própria antes de serem associados; o benefício começa inativo e ativa na primeira associação a um estabelecimento. A tela mostra estabelecimentos vinculados (plural), sugerindo que um Benefit possa ser compartilhado por mais de um Establishment; esse lado da cardinalidade ainda aguarda confirmação em P-026. Um Establishment exige Category e Benefit existentes, e o Benefit deve ter Discount. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação anteriormente aprovada em D-036 e o campo textual `benefit.discount` são substituídos.
+Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment tem um único Benefit, e cada Benefit pode pertencer a no máximo um Establishment. Benefit pode ser cadastrado sem estabelecimento para seguir o fluxo da tela; o benefício começa inativo e ativa no primeiro vínculo. O usuário confirmou que benefício é exclusivo de um estabelecimento; a legenda plural “Estabelecimentos vinculados” do protótipo diverge dessa decisão e deve ser ajustada no cliente. Cada Benefit exige pelo menos um Discount; `value` e `description` são obrigatórios. Establishment exige Category ativa e Benefit existente com Discount. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação e o campo textual antigos são substituídos.
 
 ### Estado implementado antes da reconciliação
 
-- A migração `V2__catalog.sql` já define Category, Service, Establishment e Benefit com UUID; Benefit possui um campo textual `discount`, e ainda permite vários benefícios por estabelecimento. A nova entidade Discount não está implementada.
-- A migração aplicada nunca deve ser reescrita. Mudanças confirmadas deverão ser feitas em migração Flyway nova, preservando dados e considerando a quebra de IDs usada pela API/clientes.
+- A migração `V2__catalog.sql` define Category, Service, Establishment e Benefit com UUID e mantém o campo antigo `discount`.
+- A migração `V3__benefit_discounts_and_exclusive_establishment.sql` remove o campo antigo, cria `benefit_discount`, adiciona `establishment.benefit_id` obrigatório e único e registra `first_linked_at`. Benefit pode existir antes de qualquer estabelecimento; o FK obrigatório no lado Establishment garante a associação no banco. V3 aborta se encontrar qualquer linha em Establishment ou Benefit, pois não há mapeamento sem perda do desconto textual legado nem associação segura para dados existentes. Nenhuma migração já aplicada foi editada.
 
 ## Catalog aprovado para a primeira versão
 
 - **Category:** identificador UUID gerado pelo sistema (D-042), nome (6–75 caracteres), identificador de ícone escolhido no Iconify, cor escolhida de uma paleta definida pelo projeto, estado ativo.
-- **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category e exige um Benefit.
-- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e condições (10–300), obrigatórios (D-041); estado ativo e timestamps do sistema. Não tem nome/título. Cada Benefit possui pelo menos um Discount; começa inativo e ativa quando associado pela primeira vez a um Establishment. A possibilidade de associação do mesmo Benefit a vários Establishments aguarda P-026. Limites máximos de público e contato continuam pendentes (P-007); V2 ainda guarda o desconto legado em `TEXT` até a migração de reconciliação.
+- **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category ativa e exige um Benefit.
+- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e condições (10–300), obrigatórios (D-041); estado ativo e timestamps do sistema. Não tem nome/título. Cada Benefit possui pelo menos um Discount, pode estar sem estabelecimento antes da associação e fica exclusivo de um estabelecimento quando vinculado. Começa inativo e ativa no primeiro vínculo. Limites máximos de público e contato continuam pendentes (P-007).
 - **Discount:** identificador UUID conforme o padrão confirmado para o catálogo; cada Discount pertence a exatamente um Benefit. Valor textual de 2–15 caracteres e descrição textual de 10–300 caracteres; a cardinalidade mínima de um por Benefit foi confirmada.
 - **Service:** identificador UUID; nome único (3–75); estado ativo. Establishment e Service têm relação muitos-para-muitos.
 
@@ -44,7 +44,7 @@ Category persiste a chave do ícone, por exemplo `mdi:store`, não uma URL de im
 
 ```text
 Category 1 ─── N Establishment
-Establishment N ─── 1 Benefit 1 ─── N Discount (lado Establishment→Benefit pendente P-026)
+Establishment (exige 1 Benefit) ─── (0..1 Establishment por Benefit) Benefit 1 ─── N Discount
 Establishment N ─── N Service
 ```
 

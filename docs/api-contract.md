@@ -8,7 +8,7 @@
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
 - IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
 
-**Revisão de modelo aprovada, ainda não refletida neste contrato implementado:** cada Establishment exige um Benefit; Benefit tem um ou mais Discounts, com value e description obrigatórios (D-044/D-045/D-047). A tela cria/edita Benefit e Discounts antes da associação; benefício começa inativo e é ativado na primeira associação; Establishment exige Category e Benefit existentes (D-048/D-049). O protótipo sugere que Benefit pode ser associado a vários Establishments, mas isso aguarda confirmação P-026. A implementação atual ainda usa 1:N Benefit e o campo textual `discount` em Benefit; atualizar DTOs/rotas/migração somente após fechar P-023/P-026 e verificar dados (P-025).
+**Modelo Catalog implementado em código; migração V3 ainda não foi executada neste trabalho:** Benefit é cadastrado com um ou mais Discounts na mesma tela e começa inativo. Depois, Establishment é criado com Category e Benefit existentes. Cada Establishment recebe exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; o benefício ativa no primeiro vínculo e permanece ativo/inativo conforme edição manual após isso (D-044 a D-050). P-025 continua exigindo inspeção do banco antes de aplicar V3: a migração falha se já houver linhas em Establishment ou Benefit, pois o campo textual antigo não pode ser convertido automaticamente em `value` e `description`.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -62,7 +62,16 @@ Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
 
-Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. Na V2, Benefit contém o texto `discount`, seus campos atuais são obrigatórios, e público/contato/desconto são TEXT. Isso ainda não reflete D-044/D-045; Benefit não tem nome/título.
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit não tem mais o texto `discount`: exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. `BenefitResponse.establishmentId` é `null` até o vínculo; `EstablishmentResponse.benefitId` identifica o benefício exclusivo.
+
+Exemplo do fluxo administrativo:
+
+1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact`, `conditions` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
+2. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
+3. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
+4. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+
+`V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 
 ## Ações pessoais — Engagement
 

@@ -1,6 +1,6 @@
 # Plano de implementação — API WEG Benefits
 
-**Estado:** plano de referência; módulos de negócio ainda não estão confirmados como implementados.
+**Estado:** plano de referência; consulte `implementation-log.md` para a entrega real e suas validações.
 **Base conhecida:** Java 21, Spring Boot 4.1.1, Maven, PostgreSQL 17 local, Flyway, Spring Security, Actuator e Springdoc OpenAPI. Revalidar no projeto antes de executar cada etapa.
 
 ## 1. Objetivo e fronteiras
@@ -75,9 +75,9 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 ### Etapa 2 — Catalog: modelo e administração (em implementação)
 
-**Entidades da primeira versão:** Category, Establishment, Benefit, Discount e Service, conforme a modelagem reconciliada. Brand fica fora até aprovação de uma necessidade do MVP. Benefit não terá nome/título; cada Establishment exige um Benefit, e Benefit possui um ou mais Discounts (D-044/D-045). O mesmo Benefit pode ser compartilhado por vários Establishments segundo o protótipo, mas isso precisa de confirmação em P-026. Horários ficam fora da API (D-037). O código atual/V2 ainda usa a relação anterior e desconto textual; implementar a reconciliação em migração posterior, sem reescrever V2.
+**Entidades da primeira versão:** Category, Establishment, Benefit, Discount e Service, conforme a modelagem reconciliada. Brand fica fora até aprovação de uma necessidade do MVP. Benefit não terá nome/título; cada Establishment criado exige um Benefit exclusivo, que pode ser cadastrado sem vínculo antes da associação. Benefit possui um ou mais Discounts (D-044/D-045/D-050). Horários ficam fora da API (D-037). V3 reconcilia a relação e o desconto textual sem reescrever V2, e interrompe se encontrar Establishment ou Benefit preexistentes.
 
-**Escopo:** migrações Flyway, constraints, validação, DTOs, consultas administrativas paginadas e rotas de criação/edição/desativação protegidas. Desativação é lógica e preserva linhas e relações. Categoria usa cor de paleta definida pelo projeto e identificador Iconify; o cliente mobile sincroniza somente os ícones escolhidos e os mantém em cache para operação offline (D-039/D-040). A fachada aceita URL HTTPS opcional, sem upload de mídia nesta versão (D-038). Operações relacionadas devem ser transacionais. D-041 mantém obrigatórios os campos existentes de Benefit; D-047 torna value/description de Discount obrigatórios; D-048/D-049 definem o fluxo da tela e ativação na primeira associação. P-023/P-026 aguardam fechar o contrato e a cardinalidade inversa; P-025 orienta a preservação dos dados anteriores.
+**Escopo:** migrações Flyway, constraints, validação, DTOs, consultas administrativas paginadas e rotas de criação/edição/desativação protegidas. Desativação é lógica e preserva linhas e relações. Categoria usa cor de paleta definida pelo projeto e identificador Iconify; o cliente mobile sincroniza somente os ícones escolhidos e os mantém em cache para operação offline (D-039/D-040). A fachada aceita URL HTTPS opcional, sem upload de mídia nesta versão (D-038). Operações relacionadas são transacionais. Benefit e Discounts são mantidos juntos no payload da tela; o benefício começa inativo e ativa no primeiro vínculo (D-047 a D-050). P-025 exige verificar dados antes de aplicar V3; a migração falha com mensagem segura se houver estabelecimentos ou benefícios existentes.
 
 **Concluído quando:** ADMIN administra entidades aprovadas via API; COLLABORATOR recebe 403 em escrita administrativa; desativação preserva integridade referencial e itens inativos não aparecem nas consultas normais.
 

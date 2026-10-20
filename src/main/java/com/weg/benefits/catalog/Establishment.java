@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -69,6 +70,10 @@ public class Establishment {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "benefit_id", nullable = false, unique = true)
+    private Benefit benefit;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "establishment_service",
@@ -129,6 +134,8 @@ public class Establishment {
 
     void clearFacadeImageUrl() { facadeImageUrl = null; }
 
+    void setBenefit(Benefit value) { benefit = value; }
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -154,6 +161,7 @@ public class Establishment {
     public String getFacadeImageUrl() { return facadeImageUrl; }
     public boolean isActive() { return active; }
     public Category getCategory() { return category; }
+    public Benefit getBenefit() { return benefit; }
     public Set<ServiceOption> getServices() { return Set.copyOf(services); }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

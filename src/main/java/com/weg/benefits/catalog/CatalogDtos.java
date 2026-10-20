@@ -9,9 +9,11 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 
 public final class CatalogDtos {
     private CatalogDtos() { }
@@ -49,6 +51,7 @@ public final class CatalogDtos {
             BigDecimal altitude,
             @Size(max = 2048) String facadeImageUrl,
             @NotNull UUID categoryId,
+            @NotNull UUID benefitId,
             List<@NotNull UUID> serviceIds) { }
 
     public record EstablishmentPatchRequest(
@@ -66,6 +69,7 @@ public final class CatalogDtos {
             @Size(max = 2048) String facadeImageUrl,
             Boolean clearFacadeImageUrl,
             UUID categoryId,
+            UUID benefitId,
             List<@NotNull UUID> serviceIds,
             Boolean active) {
         boolean hasChanges() {
@@ -73,7 +77,17 @@ public final class CatalogDtos {
                     || street != null || district != null || city != null || state != null
                     || latitude != null || longitude != null || altitude != null
                     || facadeImageUrl != null || Boolean.TRUE.equals(clearFacadeImageUrl)
-                    || categoryId != null || serviceIds != null || active != null;
+                    || categoryId != null || benefitId != null || serviceIds != null || active != null;
+        }
+    }
+
+    public record DiscountInput(
+            @NotBlank @Size(min = 2, max = 15) String value,
+            @NotBlank @Size(min = 10, max = 300) String description) { }
+
+    public record DiscountResponse(UUID id, String value, String description) {
+        static DiscountResponse from(Discount value) {
+            return new DiscountResponse(value.getId(), value.getValue(), value.getDescription());
         }
     }
 
@@ -81,21 +95,19 @@ public final class CatalogDtos {
             @NotBlank String audience,
             @NotBlank @Size(min = 50, max = 300) String participationInstructions,
             @NotBlank String contact,
-            @NotBlank String discount,
             @NotBlank @Size(min = 10, max = 300) String conditions,
-            @NotNull UUID establishmentId) { }
+            @NotEmpty List<@NotNull @Valid DiscountInput> discounts) { }
 
     public record BenefitPatchRequest(
             String audience,
             @Size(min = 50, max = 300) String participationInstructions,
             String contact,
-            String discount,
             @Size(min = 10, max = 300) String conditions,
-            UUID establishmentId,
+            List<@NotNull @Valid DiscountInput> discounts,
             Boolean active) {
         boolean hasChanges() {
             return audience != null || participationInstructions != null || contact != null
-                    || discount != null || conditions != null || establishmentId != null || active != null;
+                    || conditions != null || discounts != null || active != null;
         }
     }
 
@@ -117,13 +129,14 @@ public final class CatalogDtos {
     public record EstablishmentResponse(UUID id, String name, String description, String postalCode,
             Integer streetNumber, String street, String district, String city, String state,
             BigDecimal latitude, BigDecimal longitude, BigDecimal altitude, String facadeImageUrl,
-            CategoryResponse category, List<ServiceResponse> services, boolean active,
+            CategoryResponse category, UUID benefitId, List<ServiceResponse> services, boolean active,
             Instant createdAt, Instant updatedAt) {
         static EstablishmentResponse from(Establishment value) {
             return new EstablishmentResponse(value.getId(), value.getName(), value.getDescription(),
                     value.getPostalCode(), value.getStreetNumber(), value.getStreet(), value.getDistrict(),
                     value.getCity(), value.getState(), value.getLatitude(), value.getLongitude(), value.getAltitude(),
                     value.getFacadeImageUrl(), CategoryResponse.from(value.getCategory()),
+                    value.getBenefit() == null ? null : value.getBenefit().getId(),
                     value.getServices().stream().filter(ServiceOption::isActive)
                             .sorted(java.util.Comparator.comparing(ServiceOption::getName))
                             .map(ServiceResponse::from).toList(), value.isActive(), value.getCreatedAt(),
@@ -132,12 +145,14 @@ public final class CatalogDtos {
     }
 
     public record BenefitResponse(UUID id, String audience, String participationInstructions, String contact,
-            String discount, String conditions, UUID establishmentId, boolean active,
+            String conditions, UUID establishmentId, List<DiscountResponse> discounts, boolean active,
             Instant createdAt, Instant updatedAt) {
         static BenefitResponse from(Benefit value) {
             return new BenefitResponse(value.getId(), value.getAudience(), value.getParticipationInstructions(),
-                    value.getContact(), value.getDiscount(), value.getConditions(), value.getEstablishment().getId(),
-                    value.isActive(), value.getCreatedAt(), value.getUpdatedAt());
+                    value.getContact(), value.getConditions(),
+                    value.getEstablishment() == null ? null : value.getEstablishment().getId(),
+                    value.getDiscounts().stream().map(DiscountResponse::from).toList(), value.isActive(),
+                    value.getCreatedAt(), value.getUpdatedAt());
         }
     }
 
