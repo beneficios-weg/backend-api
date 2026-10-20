@@ -174,6 +174,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Limites de público/contato/desconto seguem pendentes; valores da paleta de oito cores são a paleta inicial do projeto; runtime, Flyway V2 e autorização ainda precisam de verificação com PostgreSQL em execução. Commit `bca3426` foi criado na branch `codex/catalog-foundation` e publicado em `origin`; a PR para `develop` ainda não foi aberta porque o navegador estava sem sessão GitHub e o `gh` CLI não está instalado.
 - **Próxima etapa:** Iniciar Docker/PostgreSQL, executar API na porta 8081 e validar migração/health/endpoints sem executar testes automatizados; resolver P-007 antes de impor limites a Benefit; abrir a PR para `develop` após autenticar GitHub/conectar a integração.
 
+### Revisão do modelo de dados recebida — 2026-10-20
+
+- **Objetivo e estado:** Preservar e comparar a modelagem atualizada enviada pela equipe. Revisão documental concluída; alterações de esquema e comportamento aguardam reconciliação das divergências.
+- **Arquivos alterados:** Adicionado `docs/referencia/WEG-Benefits-Modelagem-revisada.pdf`; atualizados `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/README.md` e este log. Nenhum código, endpoint ou migração foi alterado.
+- **Modelo/contrato:** O PDF propõe IDs inteiros para entidades de Catalog, relação Establishment 1:1 Benefit, entidade Discount 1:N Benefit, seleção de ícones por opções do sistema, username só com letras minúsculas e Estado de 2–75 caracteres.
+- **Decisões e divergências:** P-017 a P-022 registram conflitos com decisões anteriores, contratos/validadores e V2. O estado aprovado e implementado foi preservado; V2 não foi editada. A cópia do PDF tem o mesmo SHA-256 da origem.
+- **Validações executadas:** Verificado que o PDF de origem estava acessível, extraído seu texto (6 páginas), inspecionados modelo, registro, contrato, código e migrações. Links relativos adicionados apontam para arquivos existentes. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** Não é seguro converter `UUID` em inteiros nem separar o texto de desconto em valor/descrição sem confirmar impacto na API/clientes e definir a preservação de dados existentes. Também faltam definições inequívocas para a cardinalidade e para as regras de username, ícones e estado.
+- **Próxima dependência/módulo:** Resolver P-017 a P-022 com a equipe; então especificar uma migração nova de reconciliação de Catalog e atualizar entidades, DTOs e contrato, preservando V2.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

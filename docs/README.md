@@ -28,6 +28,8 @@ registro de decisões.
 - `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
 - `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
 - `implementation-log.md`: estado real das etapas, baseado em mudanças e validações efetivamente realizadas.
+- [`modelo-de-dados.md`](modelo-de-dados.md): modelo aprovado atualmente e divergências da revisão mais recente em reconciliação.
+- [`referencia/WEG-Benefits-Modelagem-revisada.pdf`](referencia/WEG-Benefits-Modelagem-revisada.pdf): PDF de modelagem recebido em 2026-10-20, preservado como material de referência; consulte o registro de decisões para conflitos pendentes.
 
 ## Como manter estes documentos
 
