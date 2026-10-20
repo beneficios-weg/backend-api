@@ -13,7 +13,9 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.weg.benefits.identity.IdentityException;
+import com.weg.benefits.catalog.CatalogException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -22,6 +24,11 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(IdentityException.class)
     ResponseEntity<ProblemDetail> handleIdentity(IdentityException exception) {
+        return problem(exception.getStatus(), exception.getTitle(), exception.getMessage());
+    }
+
+    @ExceptionHandler(CatalogException.class)
+    ResponseEntity<ProblemDetail> handleCatalog(CatalogException exception) {
         return problem(exception.getStatus(), exception.getTitle(), exception.getMessage());
     }
 
@@ -45,6 +52,11 @@ public class ApiExceptionHandler {
     ResponseEntity<ProblemDetail> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException exception) {
         return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Tipo de conteúdo não suportado",
                 "O tipo de conteúdo enviado não é aceito.");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ProblemDetail> handleDataConflict(DataIntegrityViolationException exception) {
+        return problem(HttpStatus.CONFLICT, "Conflito", "A operação conflita com um registro ou relação existente.");
     }
 
     @ExceptionHandler(Exception.class)

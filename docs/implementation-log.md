@@ -154,6 +154,26 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações e riscos restantes:** A disponibilidade SMTP não aparece no health agregado; verificar o SMTP no fluxo de criação de conta. As credenciais inválidas precisam ser corrigidas antes de criar usuários ou provisionar o ADMIN.
 - **Próximo passo:** Reiniciar com Java 21 e validar `/actuator/health` na porta 8081. Configurar uma senha de app válida antes de testar criação de usuários.
 
+### Decisões de escopo do Catalog — 2026-10-20
+
+- **Objetivo e estado:** Consolidar o modelo revisado e as decisões para preparar a primeira implementação de Catalog. Nenhuma funcionalidade ou migração de Catalog foi criada nesta atualização.
+- **Arquivos alterados:** `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md`, `docs/modelo-de-dados.md` e este log.
+- **Comportamento/contrato planejado:** Benefício não tem nome/título e cada benefício pertence a um estabelecimento; um estabelecimento pode ter vários benefícios. A primeira versão não armazena nem retorna horários. Fachada aceita URL HTTPS opcional. Desativação será lógica, preservando referências e ocultando itens inativos das consultas normais. Categorias terão cor de paleta do projeto e chave Iconify; mobile baixa apenas ícones selecionados durante sincronização online e mantém cache local para uso offline.
+- **Decisões e divergências:** O plano/contrato anteriores ainda mencionavam horários, marcas e distância; foram alinhados para excluir horários e não antecipar marcas ou busca espacial. O conteúdo não especifica nulabilidade/limites de `publico`, `contact` e `discount`; P-007 permanece aberto apenas para esses detalhes. PostGIS permanece pendente, mas não bloqueia CRUD sem proximidade.
+- **Validações executadas e resultados:** Inspecionados estado Git limpo, POM, plano, registro, contrato, código e migrações. Nenhum teste foi criado ou executado e nenhuma compilação foi executada. A tentativa de criar branch falhou porque o ambiente negou escrita em `.git` (`Permission denied`); os arquivos de documentação estão editados na branch existente.
+- **Limitações e riscos restantes:** Ícones e imagens recém-adicionados só ficam disponíveis offline após o cliente sincronizar e armazenar cache enquanto estiver online. O cliente mobile não está neste repositório. Ainda é necessário fechar P-007 antes da migração de Benefit; valores concretos da paleta também precisam ser definidos no contrato/implementação.
+- **Próxima dependência/módulo:** Fechar limites/nulabilidade de Benefit e definir a paleta; depois implementar Catalog em branch de trabalho baseada em `develop`, sem horários, Brand ou busca espacial.
+
+### Catalog — primeira implementação — 2026-10-20
+
+- **Objetivo e estado:** Implementar o modelo inicial, administração e leitura autenticada do catálogo; código preparado e compilado, execução com PostgreSQL ainda não validada.
+- **Arquivos criados/alterados:** Classes JPA, repositórios, DTOs, serviço e controllers em `src/main/java/com/weg/benefits/catalog/`; `src/main/resources/db/migration/V2__catalog.sql`; handler comum de conflito HTTP; contrato, registro de decisões, modelo, plano e este log.
+- **Comportamento/rotas:** CRUD administrativo (GET paginado/detalhe, POST, PATCH e POST deactivation) para `/v1/admin/categories`, `/services`, `/establishments` e `/benefits`; leitura ativa em `/v1/categories`, `/v1/categories/options`, `/v1/services`, `/v1/establishments`, `/v1/establishments/{id}` e `/v1/establishments/{id}/benefits`. A configuração de segurança existente exige ADMIN para `/v1/admin/**` e sessão para as demais rotas. V2 cria Category, Service, Establishment, relação N:N e Benefit com desativação lógica e UUID.
+- **Decisões/divergências:** D-041 confirma todos os campos de Benefit obrigatórios. D-042 confirma UUID para as quatro entidades Catalog. `audience`, `contact` e `discount` usam TEXT porque seus limites máximos continuam sem decisão (P-007). Não foram incluídos horários, Brand, PostGIS ou busca por distância.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou. Nenhum teste foi adicionado ou executado. `mvnw.cmd spring-boot:run` foi tentado em 8081; a inicialização não conectou ao banco porque `localhost:5432` recusou a conexão. `docker compose ps` confirmou que o Docker Desktop engine não está acessível. A migração V2 não foi aplicada e endpoints não foram exercitados.
+- **Limitações/riscos:** Limites de público/contato/desconto seguem pendentes; valores da paleta de oito cores estão no código como paleta inicial do projeto; runtime, Flyway V2 e autorização ainda precisam de verificação com PostgreSQL em execução. A branch correta/commit dependem de liberar a escrita Git, que estava negada pelo ambiente.
+- **Próxima etapa:** Iniciar Docker/PostgreSQL, executar API na porta 8081 e validar migração/health/endpoints sem executar testes automatizados; resolver P-007 antes de impor limites a Benefit. Preparar branch e PR para `develop` quando Git permitir.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
