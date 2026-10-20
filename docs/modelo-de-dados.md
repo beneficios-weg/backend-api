@@ -14,7 +14,7 @@ O documento de referência [`WEG Benefits — Modelagem revisada`](referencia/WE
 - Ícone de Category selecionado entre opções oferecidas pelo próprio sistema.
 - Username descrito como texto de 3–75 caracteres com apenas letras minúsculas; Estado como texto de 2–75 caracteres.
 
-Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment terá exatamente um Benefit; cada Benefit terá pelo menos um Discount; `value` e `description` são obrigatórios; benefício e descontos serão geridos na mesma tela administrativa, e um Establishment só poderá ser criado se Category, Benefit e Discount existirem. O protótipo da tela ainda será enviado e deve orientar o contrato HTTP. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação 1:1 e os descontos separados substituem D-036 e a forma anterior de `benefit.discount`.
+Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment terá exatamente um Benefit; cada Benefit terá pelo menos um Discount; `value` e `description` são obrigatórios. Benefícios e descontos são criados/editados na mesma tela própria antes de serem associados; o benefício começa inativo e ativa na primeira associação a um estabelecimento. A tela mostra estabelecimentos vinculados (plural), sugerindo que um Benefit possa ser compartilhado por mais de um Establishment; esse lado da cardinalidade ainda aguarda confirmação em P-026. Um Establishment exige Category e Benefit existentes, e o Benefit deve ter Discount. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação anteriormente aprovada em D-036 e o campo textual `benefit.discount` são substituídos.
 
 ### Estado implementado antes da reconciliação
 
@@ -24,8 +24,8 @@ Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo
 ## Catalog aprovado para a primeira versão
 
 - **Category:** identificador UUID gerado pelo sistema (D-042), nome (6–75 caracteres), identificador de ícone escolhido no Iconify, cor escolhida de uma paleta definida pelo projeto, estado ativo.
-- **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category e tem exatamente um Benefit.
-- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e condições (10–300), obrigatórios (D-041); estado ativo e timestamps do sistema. Não tem nome/título. Cada Benefit pertence a exatamente um Establishment e possui pelo menos um Discount. Limites máximos de público e contato continuam pendentes (P-007); V2 ainda guarda o desconto legado em `TEXT` até a migração de reconciliação.
+- **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category e exige um Benefit.
+- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e condições (10–300), obrigatórios (D-041); estado ativo e timestamps do sistema. Não tem nome/título. Cada Benefit possui pelo menos um Discount; começa inativo e ativa quando associado pela primeira vez a um Establishment. A possibilidade de associação do mesmo Benefit a vários Establishments aguarda P-026. Limites máximos de público e contato continuam pendentes (P-007); V2 ainda guarda o desconto legado em `TEXT` até a migração de reconciliação.
 - **Discount:** identificador UUID conforme o padrão confirmado para o catálogo; cada Discount pertence a exatamente um Benefit. Valor textual de 2–15 caracteres e descrição textual de 10–300 caracteres; a cardinalidade mínima de um por Benefit foi confirmada.
 - **Service:** identificador UUID; nome único (3–75); estado ativo. Establishment e Service têm relação muitos-para-muitos.
 
@@ -44,7 +44,7 @@ Category persiste a chave do ícone, por exemplo `mdi:store`, não uma URL de im
 
 ```text
 Category 1 ─── N Establishment
-Establishment 1 ─── 1 Benefit 1 ─── N Discount
+Establishment N ─── 1 Benefit 1 ─── N Discount (lado Establishment→Benefit pendente P-026)
 Establishment N ─── N Service
 ```
 

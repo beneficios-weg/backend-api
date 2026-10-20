@@ -49,11 +49,12 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-041 | Todos os campos de Benefit — público, instruções de participação, contato, desconto, condições e estabelecimento — são obrigatórios | Confirmada originalmente pelo usuário; após D-045, desconto é uma entidade separada e cada Benefit deve ter pelo menos um Discount |
 | D-042 | Category, Service, Establishment e Benefit usarão identificadores UUID | Confirmada pelo usuário em 2026-10-20; IDs de usuários permanecem inteiros conforme D-017 |
 | D-043 | A revisão da modelagem mantém UUID para Category, Service, Establishment e Benefit; a nova entidade Discount seguirá UUID conforme o padrão do catálogo | Confirmada pelo usuário em 2026-10-20 |
-| D-044 | Cada Establishment terá exatamente um Benefit, substituindo a cardinalidade 1:N registrada em D-036 | Confirmada pelo usuário em 2026-10-20; o fluxo de criação ainda precisa assegurar a participação obrigatória |
+| D-044 | Cada Establishment deverá referenciar exatamente um Benefit, substituindo a cardinalidade anterior de D-036 | Confirmada pelo usuário em 2026-10-20; a cardinalidade inversa (um Benefit ligado a quantos Establishments) aguarda P-026 |
 | D-045 | Discount será entidade própria 1:N por Benefit; cada Benefit terá pelo menos um Discount. `value` terá 2–15 caracteres e `description` 10–300 | Confirmada pelo usuário em 2026-10-20; a migração deve preservar os descontos legados |
 | D-046 | Permanecem as decisões existentes de Iconify (D-040), username (D-022) e Estado como sigla UF; os trechos divergentes do PDF não as substituem | Confirmada pelo usuário em 2026-10-20 |
 | D-047 | `Discount.value` e `Discount.description` são obrigatórios; limites de 2–15 e 10–300 caracteres, respectivamente | Confirmada pelo usuário em 2026-10-20 |
-| D-048 | Benefício e descontos são criados/editados na mesma tela administrativa. Establishment só pode ser criado quando Category, Benefit e Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo pendente deve orientar o contrato HTTP |
+| D-048 | Benefício e descontos são criados/editados na mesma tela administrativa antes da associação. Establishment só pode ser criado quando Category e Benefit com Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo recebido em 2026-10-20 orienta o fluxo de telas |
+| D-049 | Benefit começa inativo e ativa quando associado pela primeira vez a um Establishment; uma desativação manual permanece mesmo com estabelecimentos vinculados | Confirmada pelo texto visível no protótipo enviado em 2026-10-20 |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -77,9 +78,10 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-020 | Os ícones deixarão de usar Iconify? | Resolvido por D-046: manter a abordagem Iconify aprovada anteriormente | Fechado |
 | P-021 | Username aceitará somente letras minúsculas? | Resolvido por D-046: manter a regra D-022 | Fechado |
 | P-022 | Estado aceitará nomes com 2–75 caracteres? | Resolvido por D-046: manter somente sigla UF | Fechado |
-| P-023 | Como a tela única de Benefit/Discount e a exigência de Category/Benefit/Discount se traduzem no contrato da API e no limite transacional do cadastro do Establishment? | A interface deve seguir D-048; aguardar o protótipo e então desenhar DTOs/operação que mantenham as invariantes D-044/D-045 | Antes de atualizar rotas/DTOs de Catalog |
+| P-023 | Como representar pela API o cadastro de Benefit/Discount na tela própria e depois a associação de Category/Benefit durante a criação de Establishment? | A tela cria Benefit inativo com um ou mais Discounts; Establishment referencia Category e Benefit existentes. Atualizar contrato após resolver a cardinalidade P-026 | Antes de atualizar rotas/DTOs de Catalog |
 | P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Resolvido por D-047 | Fechado |
 | P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | Inspecionar contagens; não descartar benefícios múltiplos nem inventar divisão do texto legado em valor/descrição | Antes da migração V3 |
+| P-026 | Um Benefit pode ser associado a vários Establishments? | O protótipo mostra “Estabelecimentos vinculados” no plural e benefício ativado na primeira associação, sugerindo sim; confirmar antes de escolher `UNIQUE` ou relacionamento inverso | Antes da migração V3 |
 
 ## Registro de alteração
 

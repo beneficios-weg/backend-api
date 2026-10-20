@@ -204,6 +204,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos restantes:** Não se deve implementar o fluxo de Catalog por suposição de payload ou de criação antes de analisar o protótipo. V2 não deve ser reescrita.
 - **Próxima dependência/módulo:** Receber o protótipo, fechar P-023 e verificar dados locais; depois criar migração nova e alinhar entidades, serviços, DTOs e contrato.
 
+### Revisão do protótipo de Benefit — 2026-10-20
+
+- **Objetivo e estado:** Registrar o fluxo visível nas telas de criação e edição de benefício. Fluxo de interface entendido; cardinalidade inversa ainda pendente.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento visível:** Benefício é criado/edita-se numa tela própria com um ou mais descontos; começa inativo, ativa na primeira associação a estabelecimento, e desativação manual permanece mesmo com vínculos. A criação do estabelecimento requer categoria e benefício/desconto existentes.
+- **Decisões e divergências:** Value/description obrigatórios confirmados (D-047); telas adicionam D-049. O rótulo plural “Estabelecimentos vinculados” sugere que um Benefit pode estar em múltiplos Establishments, mas P-026 registra a necessidade de confirmação contra a resposta anterior de relação 1:1.
+- **Validações executadas:** Inspeção visual das duas telas enviadas e revisão dos documentos. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** A direção da relação Benefit–Establishment determina FK, unicidade e payloads da API; não implementá-la até confirmar P-026. A consulta ao PostgreSQL local permanece indisponível neste ambiente.
+- **Próxima dependência/módulo:** Confirmar se Benefit pode ser reutilizado por vários Establishments; depois definir associação, atualizar Catalog e preparar migração nova com preservação de dados.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
