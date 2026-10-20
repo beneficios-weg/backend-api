@@ -14,7 +14,7 @@ O documento de referência [`WEG Benefits — Modelagem revisada`](referencia/WE
 - Ícone de Category selecionado entre opções oferecidas pelo próprio sistema.
 - Username descrito como texto de 3–75 caracteres com apenas letras minúsculas; Estado como texto de 2–75 caracteres.
 
-Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment terá exatamente um Benefit; cada Benefit terá pelo menos um Discount; Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação 1:1 e os descontos separados substituem D-036 e a forma anterior de `benefit.discount`.
+Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment terá exatamente um Benefit; cada Benefit terá pelo menos um Discount; `value` e `description` são obrigatórios; benefício e descontos serão geridos na mesma tela administrativa, e um Establishment só poderá ser criado se Category, Benefit e Discount existirem. O protótipo da tela ainda será enviado e deve orientar o contrato HTTP. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação 1:1 e os descontos separados substituem D-036 e a forma anterior de `benefit.discount`.
 
 ### Estado implementado antes da reconciliação
 

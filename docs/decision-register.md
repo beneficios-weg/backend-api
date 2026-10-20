@@ -52,6 +52,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-044 | Cada Establishment terá exatamente um Benefit, substituindo a cardinalidade 1:N registrada em D-036 | Confirmada pelo usuário em 2026-10-20; o fluxo de criação ainda precisa assegurar a participação obrigatória |
 | D-045 | Discount será entidade própria 1:N por Benefit; cada Benefit terá pelo menos um Discount. `value` terá 2–15 caracteres e `description` 10–300 | Confirmada pelo usuário em 2026-10-20; a migração deve preservar os descontos legados |
 | D-046 | Permanecem as decisões existentes de Iconify (D-040), username (D-022) e Estado como sigla UF; os trechos divergentes do PDF não as substituem | Confirmada pelo usuário em 2026-10-20 |
+| D-047 | `Discount.value` e `Discount.description` são obrigatórios; limites de 2–15 e 10–300 caracteres, respectivamente | Confirmada pelo usuário em 2026-10-20 |
+| D-048 | Benefício e descontos são criados/editados na mesma tela administrativa. Establishment só pode ser criado quando Category, Benefit e Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo pendente deve orientar o contrato HTTP |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -75,8 +77,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-020 | Os ícones deixarão de usar Iconify? | Resolvido por D-046: manter a abordagem Iconify aprovada anteriormente | Fechado |
 | P-021 | Username aceitará somente letras minúsculas? | Resolvido por D-046: manter a regra D-022 | Fechado |
 | P-022 | Estado aceitará nomes com 2–75 caracteres? | Resolvido por D-046: manter somente sigla UF | Fechado |
-| P-023 | Estabelecimento precisa ser criado atomicamente com seu único Benefit e pelo menos um Discount, ou pode existir temporariamente sem Benefit? | Recomenda-se criar/editar o conjunto numa transação para garantir 1:1 e a participação mínima; confirmar antes de mudar o contrato HTTP | Antes de atualizar rotas/DTOs de Catalog |
-| P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Recomenda-se ambos obrigatórios, conforme os campos definidos no modelo; confirmar antes da migração | Antes da migração V3 |
+| P-023 | Como a tela única de Benefit/Discount e a exigência de Category/Benefit/Discount se traduzem no contrato da API e no limite transacional do cadastro do Establishment? | A interface deve seguir D-048; aguardar o protótipo e então desenhar DTOs/operação que mantenham as invariantes D-044/D-045 | Antes de atualizar rotas/DTOs de Catalog |
+| P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Resolvido por D-047 | Fechado |
 | P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | Inspecionar contagens; não descartar benefícios múltiplos nem inventar divisão do texto legado em valor/descrição | Antes da migração V3 |
 
 ## Registro de alteração
@@ -106,6 +108,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | Todos os campos de Benefit são obrigatórios; limites para público, contato e desconto não foram especificados e continuam abertos | Usuário |
 | 2026-10-20 | IDs de Category, Service, Establishment e Benefit serão UUID | Usuário |
 | 2026-10-20 | UUIDs existentes mantidos; Establishment terá exatamente um Benefit e Benefit terá um ou mais Discounts separados; Iconify, username atual e sigla UF permanecem | Usuário |
+| 2026-10-20 | Value e description de Discount são obrigatórios; benefício e descontos ficam na mesma tela; Establishment exige Category, Benefit e Discount | Usuário |
 
 ## Pontos de implementação pendentes
 

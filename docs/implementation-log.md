@@ -194,6 +194,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos restantes:** V2 ainda permite múltiplos benefícios por estabelecimento e mantém `discount` como texto. Não alterá-la; criar migração nova após fechar o fluxo de criação e o mapeamento dos dados.
 - **Próxima dependência/módulo:** Confirmar P-023 a P-025; então atualizar Catalog com migração Flyway nova, entidades, DTOs e contrato.
 
+### Fluxo de Benefit/Discount — 2026-10-20
+
+- **Objetivo e estado:** Registrar como os usuários do desktop irão gerenciar benefícios, descontos e pré-requisitos para estabelecimento. Decisões de produto adicionadas; o desenho HTTP aguarda o protótipo.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento aprovado:** `Discount.value` (2–15) e `Discount.description` (10–300) são obrigatórios. Benefício e descontos são criados/editados na mesma tela; Establishment só pode ser criado quando Category, Benefit e Discount existirem.
+- **Decisões e pendências:** D-047/D-048 registram as decisões. P-023 aguarda o protótipo para definir DTOs/operação HTTP e limite transacional; P-025 continua exigindo uma estratégia que preserve dados já gravados.
+- **Validações executadas:** Revisão documental e `git diff --check`; nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** Não se deve implementar o fluxo de Catalog por suposição de payload ou de criação antes de analisar o protótipo. V2 não deve ser reescrita.
+- **Próxima dependência/módulo:** Receber o protótipo, fechar P-023 e verificar dados locais; depois criar migração nova e alinhar entidades, serviços, DTOs e contrato.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

@@ -8,7 +8,7 @@
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
 - IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
 
-**Revisão de modelo aprovada, ainda não refletida neste contrato implementado:** D-044/D-045 definem Establishment 1:1 Benefit e Benefit 1:N Discount, com no mínimo um desconto por benefício. A implementação atual ainda usa 1:N Benefit e o campo textual `discount` em Benefit; P-023 a P-025 bloqueiam a atualização segura de DTOs/rotas e da migração.
+**Revisão de modelo aprovada, ainda não refletida neste contrato implementado:** D-044/D-045 definem Establishment 1:1 Benefit e Benefit 1:N Discount, com no mínimo um desconto por benefício; value e description são obrigatórios (D-047). Benefício/descontos compartilham a tela administrativa, e Establishment exige Category, Benefit e Discount (D-048). A implementação atual ainda usa 1:N Benefit e o campo textual `discount` em Benefit; aguardar o protótipo (P-023) e a verificação de dados (P-025) antes de atualizar DTOs/rotas/migração.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
