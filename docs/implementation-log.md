@@ -274,6 +274,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Login pela API ainda não foi validado após o provisionamento.
 - **Próxima etapa:** Iniciar a API na porta 8081, confirmar `/actuator/health` e autenticar com o username ou e-mail do ADMIN recém-provisionado.
 
+### Login do primeiro ADMIN validado — 2026-10-21
+
+- **Objetivo e estado:** Validar manualmente health, login por username e recuperação do perfil autenticado após o provisionamento inicial.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário confirmou health `UP`; `POST /v1/auth/login` aceitou credenciais pelo username e estabeleceu sessão; `GET /v1/me` retornou o perfil com papel `ADMIN` e conta ativa. Nenhum endpoint ou migração foi alterado.
+- **Decisões/divergências:** Provisionamento e autenticação inicial estão validados manualmente neste banco local. E-mail e outros dados pessoais foram omitidos deste registro.
+- **Comandos e resultados:** Resultados fornecidos pelo usuário via PowerShell: health `UP`; login sem erro; `/v1/me` retornou `id: 1`, username `admin`, role `ADMIN` e `active: True`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** CRUD de usuários e catálogo ainda não foi exercitado nesta validação; isso não valida todos os fluxos de autorização.
+- **Próxima etapa:** Validar manualmente o CRUD administrativo do Catalog conforme a tela aprovada, começando por criar Benefit com descontos e depois Establishment vinculado; após isso, seguir para Engagement.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
