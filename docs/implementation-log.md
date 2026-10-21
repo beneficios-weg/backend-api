@@ -224,6 +224,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Se o banco local já tiver estabelecimentos ou benefícios, a atualização falhará deliberadamente até haver mapeamento manual/revisado dos dados; não converter o desconto legado por inferência. A constraint da tabela garante que todo estabelecimento tenha um benefício exclusivo; a regra de ao menos um desconto por benefício é validada pela API. O cliente desktop deve alinhar a legenda plural à cardinalidade aprovada.
 - **Próxima dependência/módulo:** Verificar contagens do banco local, decidir como mapear dados se houver, aplicar V3 e validar manualmente na porta 8081 criação/edição de Benefit/Discount, associação exclusiva, ativação inicial e conflitos; depois seguir para Engagement.
 
+### Catalog — aplicação da migração V3 — 2026-10-21
+
+- **Objetivo e estado:** Conferir se havia dados legados antes da migração e aplicar o novo esquema Catalog no banco local.
+- **Arquivos alterados:** `docs/api-contract.md`, `docs/decision-register.md`, `docs/README.md` e este log.
+- **Comportamento/rotas/migrações:** O usuário executou `docker compose ps` e confirmou PostgreSQL healthy. As contagens pré-migração de `establishment` e `benefit` foram zero. Ao iniciar a API, Flyway validou três migrações, encontrou esquema v2 e aplicou V3 com sucesso; o esquema local avançou para v3. Não houve alteração de rotas neste trabalho.
+- **Decisões/divergências:** Nenhum mapeamento de dados foi necessário para o banco local. P-025 está resolvido para essa base; a proteção permanece para outras bases com dados. A V3 está aplicada, mas a API não completou o início HTTP neste ambiente.
+- **Comandos e resultados:** `docker compose ps` do usuário mostrou `weg-benefits-postgres` healthy. Consulta SQL do usuário retornou zero estabelecimentos e zero benefícios. `mvnw.cmd spring-boot:run` com Microsoft JDK 21.0.12.1 conectou ao PostgreSQL 17.11 e registrou `Successfully applied 1 migration ... now at version v3`. A inicialização avançou até o JPA; Tomcat falhou ao criar seu seletor NIO com `SocketException: Invalid argument: connect` ao tentar loopback. A primeira tentativa sem elevação foi bloqueada com `Permission denied: getsockopt`. Health HTTP e rotas Catalog não foram verificadas. Docker CLI não estava acessível ao processo de verificação posterior (`dockerDesktopLinuxEngine: Access denied`), então não foi feita consulta adicional de schema.
+- **Limitações/riscos:** O banco local está migrado, mas não se confirmou o status `/actuator/health` nem o comportamento HTTP. O erro de Tomcat parece restrição de loopback do ambiente de execução; o usuário precisa iniciar a API localmente na porta 8081 para validar o health e seguir os fluxos manuais.
+- **Próxima dependência/módulo:** Iniciar `.\mvnw.cmd spring-boot:run` localmente com Java 21 e confirmar `/actuator/health`; então validar CRUD de Benefit/Discount e associação exclusiva do Establishment, sem rodar testes automatizados.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

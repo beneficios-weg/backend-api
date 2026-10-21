@@ -81,7 +81,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-022 | Estado aceitará nomes com 2–75 caracteres? | Resolvido por D-046: manter somente sigla UF | Fechado |
 | P-023 | Como representar pela API o cadastro de Benefit/Discount na tela própria e depois a associação de Category/Benefit durante a criação de Establishment? | Criar/editar Benefit com lista não vazia de Discounts; depois criar Establishment com Category e Benefit existentes | Resolvido por D-048 |
 | P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Resolvido por D-047 | Fechado |
-| P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | A migração V3 interrompe se houver linhas em Establishment ou Benefit. Antes de aplicá-la, consultar contagens e, se houver dados, preparar uma conversão revisada; não dividir texto legado em valor/descrição por inferência | Antes de aplicar V3 em qualquer banco compartilhado/local com dados |
+| P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | Na consulta anterior à V3, `establishment` e `benefit` tinham zero linhas; V3 foi aplicada no banco local. Em outro ambiente, consultar contagens e preparar conversão revisada antes de migrar se houver dados | Resolvido para o banco local; permanece como cautela para outras bases |
 | P-026 | Um Benefit pode ser associado a vários Establishments? | Não. D-050 confirma exclusividade; a legenda plural da tela precisa ser ajustada no cliente | Resolvido por D-050 |
 
 ## Registro de alteração
@@ -113,6 +113,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | UUIDs existentes mantidos; Establishment terá exatamente um Benefit e Benefit terá um ou mais Discounts separados; Iconify, username atual e sigla UF permanecem | Usuário |
 | 2026-10-20 | Value e description de Discount são obrigatórios; benefício e descontos ficam na mesma tela; Establishment exige Category, Benefit e Discount | Usuário |
 | 2026-10-20 | Benefit é exclusivo de um único Establishment; pode existir sem vínculo até a criação do Establishment | Usuário |
+| 2026-10-21 | Contagem local anterior à V3 retornou zero em `establishment` e `benefit`; migração V3 aplicada com sucesso | Usuário informou as contagens; Flyway confirmou a aplicação |
 
 ## Pontos de implementação pendentes
 
