@@ -254,6 +254,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** O usuário precisa repetir o comando CLI em terminal interativo com PostgreSQL e SMTP configurados para confirmar o provisionamento completo.
 - **Próxima etapa:** Reexecutar o provisionamento CLI e confirmar que ele solicita usuário/e-mail/senha antes de persistir o primeiro ADMIN.
 
+### Isolamento da configuração HTTP no modo CLI — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha seguinte do provisionamento CLI, causada por componentes de autenticação HTTP carregados num contexto sem servidor web. Pacote compilado e inicialização manual validada até o prompt; nenhum ADMIN foi provisionado.
+- **Arquivos criados/alterados:** Criado `src/main/java/com/weg/benefits/config/PasswordEncodingConfiguration.java`; alterados `src/main/java/com/weg/benefits/config/WebSecurityConfiguration.java`, `src/main/java/com/weg/benefits/identity/AuthController.java` e este log.
+- **Comportamento:** Codificador de senha continua disponível no CLI. Configuração HTTP e `AuthController` só são carregados em aplicação Servlet. O CLI iniciou com PostgreSQL 17.11, validou três migrações, confirmou esquema v3 atualizado e alcançou os prompts de provisionamento; a execução foi interrompida antes da coleta completa e envio SMTP.
+- **Decisões/divergências:** A exceção relatada ocorreu porque `AuthenticationConfiguration` não existe em `web-application-type=none`. A primeira verificação de runtime foi bloqueada pelo sandbox ao abrir conexão local; repetida com acesso local, a inicialização alcançou o prompt. Nenhuma regra de negócio ou migração mudou.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`; testes ignorados). O comando do jar em modo CLI conectou ao banco e chegou a `Username do primeiro ADMIN:`. Foi interrompido antes da conclusão do provisionamento; nenhum teste foi criado ou executado.
+- **Limitações/riscos:** Ainda falta executar o fluxo completo interativamente com SMTP configurado para confirmar aceitação do Gmail e criação do primeiro ADMIN.
+- **Próxima etapa:** Reexecutar o comando do README em terminal interativo, inserir os dados do primeiro ADMIN e confirmar a mensagem de sucesso do SMTP; depois iniciar API na porta 8081 e verificar health/login.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
