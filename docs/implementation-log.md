@@ -244,6 +244,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Health confirma aplicação/banco conforme configuração, mas não valida autenticação nem operações do Catalog.
 - **Próxima dependência/módulo:** Validar manualmente criação/edição de Benefit com descontos e associação exclusiva ao criar Establishment; depois seguir para Engagement.
 
+### Correção do modo CLI para provisionamento do primeiro ADMIN — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha relatada ao iniciar o provisionamento CLI sem servidor web. A alteração foi compilada; o provisionamento ainda precisa ser repetido pelo usuário.
+- **Arquivos alterados:** `src/main/java/com/weg/benefits/identity/IdentityService.java` e este diário.
+- **Comportamento:** `IdentityService` agora recebe o repositório de sessões por `ObjectProvider`, resolvendo-o somente nas operações que revogam sessões. O contexto CLI pode iniciar sem o bean de sessões HTTP; na aplicação web, atualização/desativação ainda exige o repositório e revoga as sessões correspondentes.
+- **Decisões/divergências:** A causa foi a ausência de `FindByIndexNameSessionRepository` quando `spring.main.web-application-type=none`. Nenhuma regra de Identity nem migração foi alterada.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`). A primeira tentativa não iniciou o Maven porque um caminho incorreto de `JAVA_HOME` foi usado; repetida com o JDK existente, compilou. Nenhum teste foi criado ou executado; a inicialização CLI e SMTP ainda não foram repetidos.
+- **Limitações/riscos:** O usuário precisa repetir o comando CLI em terminal interativo com PostgreSQL e SMTP configurados para confirmar o provisionamento completo.
+- **Próxima etapa:** Reexecutar o provisionamento CLI e confirmar que ele solicita usuário/e-mail/senha antes de persistir o primeiro ADMIN.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
