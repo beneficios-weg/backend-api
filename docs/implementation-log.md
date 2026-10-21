@@ -234,6 +234,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** O banco local está migrado, mas não se confirmou o status `/actuator/health` nem o comportamento HTTP. O erro de Tomcat parece restrição de loopback do ambiente de execução; o usuário precisa iniciar a API localmente na porta 8081 para validar o health e seguir os fluxos manuais.
 - **Próxima dependência/módulo:** Iniciar `.\mvnw.cmd spring-boot:run` localmente com Java 21 e confirmar `/actuator/health`; então validar CRUD de Benefit/Discount e associação exclusiva do Establishment, sem rodar testes automatizados.
 
+### Catalog — health confirmado após V3 — 2026-10-21
+
+- **Objetivo e estado:** Confirmar que a API local iniciou após configurar Maven para usar Java 21 e aplicar V3.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O usuário confirmou `UP` em `http://localhost:8081/actuator/health`; a API está acessível e responde ao health. V3 já havia sido aplicada pelo Flyway. Nenhuma rota de negócio foi exercitada.
+- **Decisões/divergências:** A falha anterior de inicialização do Maven era Java 8 no terminal, que não carrega o plugin do Spring Boot; com Java 21 a aplicação iniciou no ambiente do usuário.
+- **Comandos e resultados:** Resultado fornecido pelo usuário: `(Invoke-RestMethod http://localhost:8081/actuator/health).status` retornou `UP`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Health confirma aplicação/banco conforme configuração, mas não valida autenticação nem operações do Catalog.
+- **Próxima dependência/módulo:** Validar manualmente criação/edição de Benefit com descontos e associação exclusiva ao criar Establishment; depois seguir para Engagement.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
