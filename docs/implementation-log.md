@@ -264,6 +264,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Ainda falta executar o fluxo completo interativamente com SMTP configurado para confirmar aceitação do Gmail e criação do primeiro ADMIN.
 - **Próxima etapa:** Reexecutar o comando do README em terminal interativo, inserir os dados do primeiro ADMIN e confirmar a mensagem de sucesso do SMTP; depois iniciar API na porta 8081 e verificar health/login.
 
+### Provisionamento do primeiro ADMIN confirmado — 2026-10-21
+
+- **Objetivo e estado:** Concluir a validação manual do provisionamento inicial após corrigir o modo CLI. O usuário confirmou que a conta ADMIN foi criada.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O CLI conectou ao PostgreSQL 17.11 com esquema v3 atualizado, recebeu os dados interativamente e informou “Primeiro ADMIN provisionado e mensagem aceita pelo SMTP.” Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** A confirmação do usuário demonstra que o banco persistiu o primeiro ADMIN e que o Gmail aceitou o envio. Dados pessoais e senha não são reproduzidos neste registro.
+- **Comandos e resultados:** O usuário executou `mvnw.cmd -DskipTests package` com Java 21 (`BUILD SUCCESS`) e o JAR com `--app.cli.provision-admin=true --spring.main.web-application-type=none`; o resultado final informou sucesso. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Login pela API ainda não foi validado após o provisionamento.
+- **Próxima etapa:** Iniciar a API na porta 8081, confirmar `/actuator/health` e autenticar com o username ou e-mail do ADMIN recém-provisionado.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
