@@ -335,6 +335,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos restantes:** Falta inicializar a API desta build na porta 8081 e validar manualmente as cinco rotas, duplicidade e isolamento por usuário. O app mobile não está neste repositório; mensagem e limpeza da fila continuam a cargo do cliente. Nenhum teste automatizado foi adicionado ou executado.
 - **Próxima etapa:** Liberar a porta 8081 sem interromper processo alheio, iniciar esta build e validar favoritos, visitas, duplicidade, isolamento por usuário e acesso após desativação; depois integrar fila e aviso no app mobile.
 
+### Engagement — testes automatizados iniciais — 2026-10-23
+
+- **Objetivo e estado:** Substituir parte da validação manual do módulo Engagement por testes automatizados de serviço e controller. Suíte executada com sucesso.
+- **Arquivos criados/alterados:** `src/test/java/com/weg/benefits/engagement/EngagementServiceTests.java`, `src/test/java/com/weg/benefits/engagement/EngagementControllerTests.java` e este diário.
+- **Cobertura:** Proprietário de favoritos/visitas vem da conta autenticada; PUT de favorito não duplica; conta inativa não grava; visita nova persiste o proprietário, estabelecimento e horário do evento; evento repetido na janela de 30 minutos retorna o registro existente; controller responde `201` para novo evento e `200` para duplicata.
+- **Decisões/divergências:** Não houve mudança de comportamento da API, rotas ou migrações. São testes unitários com dependências simuladas mais o teste de contexto Spring já existente; eles não fazem chamadas HTTP reais nem validam as consultas JPA do módulo contra um banco isolado.
+- **Comandos e resultados:** `mvnw.cmd test` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`, 7 testes executados, 0 falhas, 0 erros, 0 ignorados. O teste de contexto conectou ao PostgreSQL de desenvolvimento, confirmou Flyway v4 atualizado e carregou o contexto Spring. `git diff --check` passou.
+- **Limitações/riscos:** Permanecem sem cobertura automatizada de integração HTTP/autorização Spring Security e de persistência real dos repositórios de Engagement. Os testes de serviço verificam as regras sem depender de estado do banco, SMTP ou app mobile.
+- **Próxima etapa:** Criar testes de integração isolados para endpoints e persistência de Engagement quando o projeto definir/instalar infraestrutura de banco de teste; os testes atuais permitem validar regressões das regras principais sem repetir os fluxos manualmente.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
