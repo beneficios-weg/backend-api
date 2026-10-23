@@ -302,17 +302,27 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Decisões/divergências:** Exclusividade, substituição dos descontos, atualização parcial e visibilidade de benefício inativo foram confirmadas no banco local. Nenhuma regra, rota ou migração mudou.
 - **Comandos e resultados:** Validação manual do usuário via PowerShell nas rotas `PATCH /v1/admin/benefits/{id}`, `PATCH /v1/admin/establishments/{id}`, `POST /v1/admin/establishments` (conflito 409), `POST /v1/admin/benefits/{id}/deactivation` e `GET /v1/establishments/{id}/benefits`; reativação por PATCH confirmada com um benefício visível. Nenhum teste automatizado foi criado ou executado.
 - **Limitações/riscos:** Ainda não foram exercitados cenários de autorização negativa nem casos de validação de entrada inválida. A implementação/validação das visitas depende da etapa Engagement.
-- **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Fechar P-012 antes de implementar o tratamento de sincronização após desativação no Engagement.
+- **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Definir regras de Engagement e sincronização offline antes da implementação.
 
 ### Decisões iniciais de Engagement — 2026-10-23
 
 - **Objetivo e estado:** Registrar as decisões de permanência mínima para visita e retenção offline; nenhuma funcionalidade de Engagement foi implementada.
 - **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
 - **Comportamento/contrato planejado:** O cliente registra visita após 3 minutos no estabelecimento, enviando somente evento final; dados/ações offline podem permanecer no cliente sem prazo até a reconexão.
-- **Decisões e pendências:** D-051 a D-053 confirmadas: dados offline até reconexão, visita após 3 minutos, chave idempotente por estabelecimento + timestamp UTC e janela de duplicidade de 30 minutos. P-011 está fechada; P-012 permanece para definir o tratamento no cliente quando houver pendências e a conta tiver sido desativada.
+- **Decisões e pendências:** D-051 a D-053 confirmadas: dados offline até reconexão, visita após 3 minutos, chave idempotente por estabelecimento + timestamp UTC e janela de duplicidade de 30 minutos. P-011 está fechada. P-012 foi fechada posteriormente por D-054, registrado abaixo.
 - **Comandos e resultados:** Leitura dos documentos e revisão do diff; `git diff --check` sem erros de whitespace. Nenhum teste ou execução da API realizado, pois não houve alteração de código.
 - **Limitações e riscos:** Não há endpoints nem persistência de favoritos/visitas implementados nesta etapa.
-- **Próxima etapa:** Implementar Engagement e definir o tratamento de sincronização após desativação da conta (P-012).
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização offline acordadas.
+
+### Tratamento da fila offline após desativação — 2026-10-23
+
+- **Objetivo e estado:** Registrar a decisão aprovada para fechar P-012 antes de implementar a sincronização de Engagement.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** Se a conta estiver desativada na reconexão, a API recusa sincronização; o app informa o usuário e oferece apagar a fila. Operações pendentes não podem ser enviadas sob outra conta.
+- **Decisão:** D-054 confirmada; P-012 fechada. Nenhuma rota ou funcionalidade foi implementada nesta atualização documental.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; sem build, testes ou execução da API por não haver alteração de código.
+- **Limitações/riscos:** Endpoints e fila offline de Engagement ainda não estão implementados. A exclusão da fila depende da ação do usuário no app.
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização acordadas na etapa Engagement.
 
 ## Importante
 

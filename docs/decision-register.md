@@ -44,7 +44,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-036 | Benefício não terá nome/título próprio; cada benefício pertence a exatamente um estabelecimento, e um estabelecimento pode ter vários benefícios | Parcialmente supersedida por D-044: permanece sem nome/título e pertence a um estabelecimento, mas a cardinalidade agora é 1:1 |
 | D-037 | Horários de funcionamento ficam fora da primeira versão da API: não serão armazenados, consultados nem retornados | Confirmada pelo usuário |
 | D-038 | A fachada pode ter URL HTTPS opcional informada pelo ADMIN; a API não fará upload nem armazenará o arquivo de imagem | Proposta aceita pelo usuário; o cliente deve baixar e manter em cache imagens necessárias para uso offline |
-| D-039 | Itens do catálogo serão desativados sem exclusão física; registros e relações históricas serão preservados, e itens inativos não aparecem nas consultas normais do catálogo | Proposta aceita pelo usuário; regras de sincronização offline de visitas ficam para Engagement |
+| D-039 | Itens do catálogo serão desativados sem exclusão física; registros e relações históricas serão preservados, e itens inativos não aparecem nas consultas normais do catálogo | Proposta aceita pelo usuário; regras de sincronização offline de visitas foram definidas em D-051 a D-054 |
 | D-040 | Categorias usam cor de uma paleta definida pelo projeto e um identificador de ícone escolhido no Iconify. O mobile baixa apenas ícones selecionados ainda ausentes durante a sincronização online e os mantém em cache para uso offline | Confirmada pelo usuário; Iconify não é fonte disponível durante uso offline antes do primeiro download do ícone |
 | D-041 | Todos os campos de Benefit — público, instruções de participação, contato, desconto, condições e estabelecimento — são obrigatórios | Confirmada originalmente pelo usuário; após D-045, desconto é uma entidade separada e cada Benefit deve ter pelo menos um Discount |
 | D-042 | Category, Service, Establishment e Benefit usarão identificadores UUID | Confirmada pelo usuário em 2026-10-20; IDs de usuários permanecem inteiros conforme D-017 |
@@ -56,9 +56,10 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-048 | Benefício e descontos são criados/editados na mesma tela administrativa antes da associação. Establishment só pode ser criado quando Category e Benefit com Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo recebido em 2026-10-20 orienta o fluxo de telas |
 | D-049 | Benefit começa inativo e ativa quando associado pela primeira vez a um Establishment; uma desativação manual permanece mesmo com estabelecimentos vinculados | Confirmada pelo texto visível no protótipo enviado em 2026-10-20 |
 | D-050 | Benefício é exclusivo de um estabelecimento: um Benefit associa-se a no máximo um Establishment. Pode ser cadastrado antes, sem vínculo, e cada Establishment criado pela API exige exatamente um Benefit | Confirmada pelo usuário em 2026-10-20; prevalece sobre a legenda plural do protótipo |
-| D-051 | Dados e operações do cliente podem permanecer offline sem prazo de expiração até a reconexão | Confirmada pelo usuário em 2026-10-23; comportamento se a conta for desativada antes da sincronização permanece em P-012 |
+| D-051 | Dados e operações do cliente podem permanecer offline sem prazo de expiração até a reconexão | Confirmada pelo usuário em 2026-10-23; desativação da conta tratada em D-054 |
 | D-052 | O cliente registra uma visita após o usuário permanecer por 3 minutos no estabelecimento; a API recebe o evento final e não coleta trilha GPS | Confirmada pelo usuário em 2026-10-23 |
 | D-053 | Reenvios de visita usam uma chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; não registrar outra visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos | Proposta aceita pelo usuário em 2026-10-23; horário de ocorrência enviado pelo cliente |
+| D-054 | Se a conta estiver desativada quando houver reconexão, a API recusa a sincronização; o app avisa o usuário e oferece apagar a fila local. Operações pendentes nunca são enviadas sob outra conta | Confirmada pelo usuário em 2026-10-23 |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -69,9 +70,9 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-007 | Fechar limites máximos de `publico` e `contact` em Benefit | Obrigatoriedade está fechada (D-041); proposta atual é não impor limite de domínio, persistindo como texto PostgreSQL. Limites de Discount foram definidos em D-045 | Revisão do modelo; não bloqueia Catalog com campos textuais |
 | P-008 | Brand faz parte do MVP? Quais campos teria? | Não incluir Brand sem necessidade aprovada; o documento revisado inclui Service | Pode ser adiado; não bloqueia Catalog sem Brand |
 | P-009 | Como representar horários especiais, feriados, intervalos e virada de dia? | Horários estão fora da primeira versão da API (D-037) | Não aplicável nesta etapa; reabrir se horários forem aprovados |
-| P-010 | Como arquivar unidade com favoritos/visitas existentes? | Desativação lógica, preservando linhas e relações; ocultar inativos das consultas comuns (D-039) | Fechado para Catalog; sincronização após desativação de conta depende de P-012 |
-| P-011 | Como tratar visitas duplicadas e quais dados compõem o evento? | Visita após 3 minutos no estabelecimento; evento final sem trilha GPS; chave estável por estabelecimento + timestamp UTC e janela de 30 minutos para duplicatas (D-052/D-053) | Fechado para regra de visita; o tratamento de operações pendentes após desativação da conta segue em P-012 |
-| P-012 | O que ocorre com dados locais pendentes se a conta for desativada antes da reconexão? | Os dados permanecem offline sem expiração até reconectar (D-051); API exige autenticação válida para sincronizar, mas fluxo de recuperação após desativação ainda precisa ser definido | Mobile/Engagement |
+| P-010 | Como arquivar unidade com favoritos/visitas existentes? | Desativação lógica, preservando linhas e relações; ocultar inativos das consultas comuns (D-039) | Fechado |
+| P-011 | Como tratar visitas duplicadas e quais dados compõem o evento? | Visita após 3 minutos no estabelecimento; evento final sem trilha GPS; chave estável por estabelecimento + timestamp UTC e janela de 30 minutos para duplicatas (D-052/D-053) | Fechado |
+| P-012 | O que ocorre com dados locais pendentes se a conta for desativada antes da reconexão? | A API recusa a sincronização; app avisa o usuário e oferece apagar a fila. Nunca enviar operações sob outra conta (D-054) | Fechado |
 | P-013 | Fotos serão URLs pré-cadastradas ou upload com storage? | URL HTTPS opcional, sem upload nesta versão (D-038) | Fechado para Catalog |
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
 | P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
@@ -118,6 +119,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | Benefit é exclusivo de um único Establishment; pode existir sem vínculo até a criação do Establishment | Usuário |
 | 2026-10-21 | Contagem local anterior à V3 retornou zero em `establishment` e `benefit`; migração V3 aplicada com sucesso | Usuário informou as contagens; Flyway confirmou a aplicação |
 | 2026-10-23 | Dados podem permanecer offline sem prazo até a reconexão; visita após 3 minutos e chave idempotente por estabelecimento + timestamp UTC com janela de duplicidade de 30 minutos (D-051 a D-053). Resta definir o tratamento de pendências após desativação da conta (P-012) | Usuário |
+| 2026-10-23 | Conta desativada na reconexão: a API recusa sincronização; app informa e oferece apagar a fila local; não reatribuir operações a outra conta (D-054/P-012) | Usuário |
 
 ## Pontos de implementação pendentes
 

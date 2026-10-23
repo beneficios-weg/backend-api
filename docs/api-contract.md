@@ -83,9 +83,9 @@ Exemplo do fluxo administrativo:
 
 O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Visitas repetidas em dias diferentes devem ser permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
 
-O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). O comportamento para uma operação pendente quando a conta tiver sido desativada antes da sincronização continua pendente (P-012).
+O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). Se a conta estiver desativada quando a sincronização for tentada, a API recusa as operações; o app informa o usuário e oferece apagar a fila local. Não enviar operações pendentes sob outra conta (D-054).
 
-O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Reenvios usam chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é duplicada e não cria novo registro (D-053). Se a conta for desativada antes de uma operação offline sincronizar, o tratamento no cliente ainda precisa ser definido (P-012).
+O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Reenvios usam chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é duplicada e não cria novo registro (D-053). Se a conta estiver desativada, aplicar a recusa e o tratamento da fila definidos em D-054.
 
 ## Autorização proposta
 
