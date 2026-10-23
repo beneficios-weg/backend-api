@@ -83,6 +83,10 @@ Exemplo do fluxo administrativo:
 
 O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Visitas repetidas em dias diferentes devem ser permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
 
+O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). O comportamento para uma operação pendente quando a conta tiver sido desativada antes da sincronização continua pendente (P-012).
+
+O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Campos do evento e política de duplicidade/idempotência ainda precisam ser definidos (P-011).
+
 ## Autorização proposta
 
 | Papel | Acesso |

@@ -56,6 +56,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-048 | Benefício e descontos são criados/editados na mesma tela administrativa antes da associação. Establishment só pode ser criado quando Category e Benefit com Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo recebido em 2026-10-20 orienta o fluxo de telas |
 | D-049 | Benefit começa inativo e ativa quando associado pela primeira vez a um Establishment; uma desativação manual permanece mesmo com estabelecimentos vinculados | Confirmada pelo texto visível no protótipo enviado em 2026-10-20 |
 | D-050 | Benefício é exclusivo de um estabelecimento: um Benefit associa-se a no máximo um Establishment. Pode ser cadastrado antes, sem vínculo, e cada Establishment criado pela API exige exatamente um Benefit | Confirmada pelo usuário em 2026-10-20; prevalece sobre a legenda plural do protótipo |
+| D-051 | Dados e operações do cliente podem permanecer offline sem prazo de expiração até a reconexão | Confirmada pelo usuário em 2026-10-23; comportamento se a conta for desativada antes da sincronização permanece em P-012 |
+| D-052 | O cliente registra uma visita após o usuário permanecer por 3 minutos no estabelecimento; a API recebe o evento final e não coleta trilha GPS | Confirmada pelo usuário em 2026-10-23; política de duplicidade/idempotência permanece em P-011 |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -67,8 +69,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-008 | Brand faz parte do MVP? Quais campos teria? | Não incluir Brand sem necessidade aprovada; o documento revisado inclui Service | Pode ser adiado; não bloqueia Catalog sem Brand |
 | P-009 | Como representar horários especiais, feriados, intervalos e virada de dia? | Horários estão fora da primeira versão da API (D-037) | Não aplicável nesta etapa; reabrir se horários forem aprovados |
 | P-010 | Como arquivar unidade com favoritos/visitas existentes? | Desativação lógica, preservando linhas e relações; ocultar inativos das consultas comuns (D-039) | Fechado para Catalog; sincronização de visitas offline depende de P-011 |
-| P-011 | Qual regra exata confirma visita e trata duplicidade? | Evento final do mobile com chave idempotente; definir janela e evidência mínima sem histórico GPS | Engagement |
-| P-012 | Dados disponíveis offline por quanto tempo e o que ocorre após expiração/desativação de conta? | Cache de leitura com prazo; fila de escrita identificável e sincronizada após autenticação | Mobile/Engagement |
+| P-011 | Qual regra trata visitas duplicadas e qual prova mínima o servidor exige? | O cliente registra após 3 minutos no estabelecimento (D-052); receber evento final sem trilha GPS e definir chave idempotente/política de duplicidade | Engagement |
+| P-012 | Dados disponíveis offline por quanto tempo e o que ocorre após desativação de conta? | Os dados podem permanecer offline sem prazo de expiração até a reconexão (D-051); comportamento se a conta for desativada antes da sincronização ainda precisa ser definido | Mobile/Engagement |
 | P-013 | Fotos serão URLs pré-cadastradas ou upload com storage? | URL HTTPS opcional, sem upload nesta versão (D-038) | Fechado para Catalog |
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
 | P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
@@ -114,6 +116,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | Value e description de Discount são obrigatórios; benefício e descontos ficam na mesma tela; Establishment exige Category, Benefit e Discount | Usuário |
 | 2026-10-20 | Benefit é exclusivo de um único Establishment; pode existir sem vínculo até a criação do Establishment | Usuário |
 | 2026-10-21 | Contagem local anterior à V3 retornou zero em `establishment` e `benefit`; migração V3 aplicada com sucesso | Usuário informou as contagens; Flyway confirmou a aplicação |
+| 2026-10-23 | Dados podem permanecer offline sem prazo até a reconexão; visita é registrada pelo cliente após 3 minutos no estabelecimento. Política de duplicidade e desativação antes da sincronização ainda pendentes (D-051/D-052, P-011/P-012) | Usuário |
 
 ## Pontos de implementação pendentes
 

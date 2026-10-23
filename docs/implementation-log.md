@@ -304,6 +304,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Ainda não foram exercitados cenários de autorização negativa nem casos de validação de entrada inválida. O teste de visita do Engagement depende de fechar P-011.
 - **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Fechar P-011 e P-012 antes de implementar Engagement e sincronização offline.
 
+### Decisões iniciais de Engagement — 2026-10-23
+
+- **Objetivo e estado:** Registrar as decisões de permanência mínima para visita e retenção offline; nenhuma funcionalidade de Engagement foi implementada.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** O cliente registra visita após 3 minutos no estabelecimento, enviando somente evento final; dados/ações offline podem permanecer no cliente sem prazo até a reconexão.
+- **Decisões e pendências:** D-051 e D-052 confirmadas. P-011 ainda precisa definir chave idempotente, duplicidade e prova mínima; P-012 ainda precisa definir o caso de conta desativada antes da sincronização.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; `git diff --check` sem erros de whitespace. Nenhum teste ou execução da API realizado, pois não houve alteração de código.
+- **Limitações e riscos:** Não há endpoints nem persistência de favoritos/visitas implementados nesta etapa.
+- **Próxima etapa:** Fechar P-011/P-012 antes de implementar Engagement e sua sincronização offline.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

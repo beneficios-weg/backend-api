@@ -93,7 +93,7 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 **Escopo:** favoritos próprios, histórico de visitas próprio e gravação de visita confirmada enviada pelo mobile. IDs de proprietário sempre derivam da sessão. Favoritar deve ser idempotente; visitas podem ocorrer em dias diferentes e usam chave de idempotência para reenvio.
 
-**Contrato de visita:** definir campos mínimos, relógio/event timestamp e política para visita duplicada próxima no tempo. Receber apenas visita final e prova mínima aprovada; não receber trajetória GPS completa. O mobile mantém cache e fila offline. A API aceita o reenvio e reporta resultado inequívoco.
+**Contrato de visita:** o cliente registra a visita após o usuário permanecer 3 minutos no estabelecimento (D-052). Definir campos mínimos, relógio/event timestamp, prova mínima e política idempotente para duplicatas (P-011). A API recebe apenas o evento final, sem trajetória GPS. O cliente mantém dados offline sem prazo até a reconexão (D-051); definir o comportamento se a conta for desativada antes da sincronização (P-012). A API aceita reenvio e reporta resultado inequívoco.
 
 **Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas.
 
