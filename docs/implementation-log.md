@@ -324,6 +324,17 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Endpoints e fila offline de Engagement ainda não estão implementados. A exclusão da fila depende da ação do usuário no app.
 - **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização acordadas na etapa Engagement.
 
+### Engagement — implementação inicial — 2026-10-23
+
+- **Objetivo e estado:** Implementar favoritos e visitas pertencentes à conta autenticada. Código e migração V4 aplicados ao banco local; validação HTTP manual ainda está pendente.
+- **Arquivos criados/alterados:** Novas entidades, DTOs, repositórios, serviço e controller em `engagement`; `V4__engagement_favorites_and_visits.sql`; ajustes em `IdentityService`/`AppUserRepository` para serializar gravações por conta e validar conta ativa; métodos de consulta de estabelecimento em `CatalogService`; handler de erro, README, contrato, plano, README das migrações, package-info e este diário.
+- **Rotas/migração:** `GET/PUT/DELETE /v1/me/favorites`, `GET/POST /v1/me/visits`; V4 cria `user_favorite` e `user_visit`, com FKs, unicidade/idempotência e índices.
+- **Comportamento:** Proprietário é sempre derivado da sessão. Favoritar exige estabelecimento e categoria ativos; remover favorito é idempotente. Visita exige estabelecimento existente, guarda apenas `establishmentId`, `occurredAt` e `receivedAt` (sem coordenadas), permite eventos offline sem limite de atraso e trata uma visita do mesmo usuário/estabelecimento em 30 minutos como duplicata. Eventos de locais depois desativados são aceitos para acomodar filas offline. Conta inativa/sessão revogada não consegue gravar; o cliente deve oferecer apagar a fila e nunca a enviar sob outra conta.
+- **Decisões/divergências:** Seguidas D-051 a D-054. Resposta de novo evento é 201; duplicata/reenvio é 200; favoritos retornam 204 em PUT/DELETE. O módulo mobile não está neste repositório, portanto a notificação e a ação de apagar fila ainda precisam ser implementadas no cliente.
+- **Comandos/resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`; fontes de teste compilaram, mas Surefire foi pulado e nenhum teste foi executado. `docker compose ps` mostrou PostgreSQL saudável. `spring-boot:run` conectou ao PostgreSQL 17.11, validou/aplicou V4 e inicializou Hibernate/repositórios, mas não pôde vincular a porta 8081 porque já estava ocupada; não encerrei o processo existente.
+- **Limitações/riscos restantes:** Falta inicializar a API desta build na porta 8081 e validar manualmente as cinco rotas, duplicidade e isolamento por usuário. O app mobile não está neste repositório; mensagem e limpeza da fila continuam a cargo do cliente. Nenhum teste automatizado foi adicionado ou executado.
+- **Próxima etapa:** Liberar a porta 8081 sem interromper processo alheio, iniciar esta build e validar favoritos, visitas, duplicidade, isolamento por usuário e acesso após desativação; depois integrar fila e aviso no app mobile.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

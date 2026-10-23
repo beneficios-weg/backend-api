@@ -1,4 +1,2 @@
-/**
- * User interactions such as favorites and visits belong here when those features are implemented.
- */
+/** Authenticated, user-owned favorites and visit records. */
 package com.weg.benefits.engagement;

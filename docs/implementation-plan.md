@@ -95,7 +95,7 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 **Contrato de visita:** o cliente registra a visita após o usuário permanecer 3 minutos no estabelecimento (D-052). A API recebe apenas o evento final, sem trajetória GPS; eventos usam chave idempotente estável por estabelecimento + timestamp UTC e duplicatas do mesmo usuário/estabelecimento em 30 minutos não criam nova visita (D-053). O cliente mantém dados offline sem prazo até a reconexão (D-051). Se a conta estiver desativada, a API recusa a sincronização, o app informa o usuário e oferece apagar a fila; nunca reatribuir operações a outra conta (D-054). A API aceita reenvio e reporta resultado inequívoco.
 
-**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas.
+**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas; eventos não contêm GPS bruto.
 
 ### Etapa 5 — Integração, operação e release
 

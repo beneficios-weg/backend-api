@@ -89,18 +89,18 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 Only Actuator health is exposed. Health responses do not include component details, and the aggregate
 health check covers the application/database rather than SMTP. SMTP is required for account creation;
 invalid Gmail credentials make that operation fail even when API health is `UP`. Flyway V1 creates the
-Identity user and PostgreSQL-backed Spring Session tables; V2/V3 define Catalog. V3 aborts startup if
+Identity user and PostgreSQL-backed Spring Session tables; V2/V3 define Catalog; V4 defines favorites
+and visits. V3 aborts startup if
 the database already contains rows in `establishment` or `benefit`; inspect and map those records before
-starting the updated API against a database with Catalog data. Engagement tables are not implemented.
+starting the updated API against a database with Catalog data.
 
 ## Initial package boundaries
 
 - `com.weg.benefits.catalog`: catalog administration and its use cases.
 - `com.weg.benefits.identity`: account, session authentication, initial ADMIN CLI and user administration.
-- `com.weg.benefits.engagement`: favorites and visits, when those features are designed.
+- `com.weg.benefits.engagement`: authenticated user's favorites and visits.
 - `com.weg.benefits.common`: cross-cutting HTTP and logging infrastructure.
 - `com.weg.benefits.config`: application configuration.
 
-There is no public account registration, password reset, favorites or visits. Catalog administration
-and read routes are listed in [docs/api-contract.md](docs/api-contract.md); Identity routes and their
-current scope are listed there as well.
+There is no public account registration or password reset. Catalog, Identity and Engagement routes,
+including which are implemented, are listed in [docs/api-contract.md](docs/api-contract.md).

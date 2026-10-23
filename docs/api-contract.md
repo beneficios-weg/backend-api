@@ -75,17 +75,23 @@ Exemplo do fluxo administrativo:
 
 ## Ações pessoais — Engagement
 
+Implementadas nesta etapa; todas pertencem à conta autenticada, inclusive para ADMIN:
+
 - `GET /v1/me/favorites`
 - `PUT /v1/me/favorites/{establishmentId}` — adicionar de forma idempotente
 - `DELETE /v1/me/favorites/{establishmentId}`
 - `GET /v1/me/visits` — histórico paginado da conta autenticada
 - `POST /v1/me/visits` — visita final confirmada, com chave de idempotência aprovada
 
-O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Visitas repetidas em dias diferentes devem ser permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
+Listas aceitam `page` e `size`; o tamanho é limitado a 100. A resposta de favoritos contém `establishmentId`, nome, cidade, UF, nome/ícone/cor da categoria e `favoritedAt`; estabelecimentos ou categorias inativos não aparecem. A resposta do histórico contém `id`, `establishmentId`, `occurredAt` e `receivedAt`, sem coordenadas.
 
-O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). Se a conta estiver desativada quando a sincronização for tentada, a API recusa as operações; o app informa o usuário e oferece apagar a fila local. Não enviar operações pendentes sob outra conta (D-054).
+`PUT` e `DELETE` de favoritos são idempotentes e retornam `204`. `POST /v1/me/visits` recebe `establishmentId` e `occurredAt` (ISO 8601 com offset; armazenado como instante UTC). Uma visita nova retorna `201`; reenvio/duplicata retorna `200` com o evento já persistido. A chave é a combinação do proprietário autenticado, estabelecimento e instante do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é tratada como duplicata. Não há prazo máximo para atraso offline.
 
-O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Reenvios usam chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é duplicada e não cria novo registro (D-053). Se a conta estiver desativada, aplicar a recusa e o tratamento da fila definidos em D-054.
+O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Apenas estabelecimentos existentes podem receber eventos de visita; eventos podem ser aceitos mesmo após desativação do estabelecimento para acomodar sincronização offline. Visitas repetidas fora da janela de 30 minutos são permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
+
+O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). Se uma sessão tiver sido revogada por desativação da conta, a API retorna `401`; o app informa que a sessão/conta não está disponível, não sincroniza e oferece apagar a fila local. Não enviar operações pendentes sob outra conta (D-054). A API não diferencia uma conta desativada de uma sessão inválida na resposta de autenticação.
+
+O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Reenvios usam chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é duplicada e não cria novo registro (D-053).
 
 ## Autorização proposta
 

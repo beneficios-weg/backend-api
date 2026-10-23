@@ -9,11 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.weg.benefits.identity.IdentityException;
 import com.weg.benefits.catalog.CatalogException;
+import com.weg.benefits.engagement.EngagementException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -32,9 +34,19 @@ public class ApiExceptionHandler {
         return problem(exception.getStatus(), exception.getTitle(), exception.getMessage());
     }
 
+    @ExceptionHandler(EngagementException.class)
+    ResponseEntity<ProblemDetail> handleEngagement(EngagementException exception) {
+        return problem(exception.getStatus(), exception.getTitle(), exception.getMessage());
+    }
+
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     ResponseEntity<ProblemDetail> handleInvalidRequest(Exception exception) {
         return problem(HttpStatus.BAD_REQUEST, "Requisição inválida", "Confira os dados enviados.");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ProblemDetail> handleInvalidPathOrParameter(MethodArgumentTypeMismatchException exception) {
+        return problem(HttpStatus.BAD_REQUEST, "Parâmetro inválido", "Confira os parâmetros enviados.");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

@@ -62,6 +62,18 @@ public class IdentityService {
     }
 
     @Transactional
+    public AppUser lockActiveUserForEngagement(Integer id) {
+        AppUser user = users.findByIdForUpdate(id)
+                .orElseThrow(() -> new IdentityException(HttpStatus.UNAUTHORIZED, "Sessão inválida",
+                        "Não foi possível validar a conta autenticada."));
+        if (!user.isActive()) {
+            throw new IdentityException(HttpStatus.UNAUTHORIZED, "Conta indisponível",
+                    "A conta não está disponível para sincronizar operações.");
+        }
+        return user;
+    }
+
+    @Transactional
     public UserResponse updateUser(Integer id, UpdateUserRequest request) {
         if (request.password() != null) {
             throw new IdentityException(HttpStatus.UNPROCESSABLE_ENTITY, "Alteração não permitida",
