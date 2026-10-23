@@ -91,11 +91,11 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 ### Etapa 4 — Engagement: favoritos, visitas e operação offline
 
-**Escopo:** favoritos próprios, histórico de visitas próprio e gravação de visita confirmada enviada pelo mobile. IDs de proprietário sempre derivam da sessão. Favoritar deve ser idempotente; visitas podem ocorrer em dias diferentes e usam chave de idempotência para reenvio.
+**Escopo:** favoritos próprios, histórico de visitas próprio e gravação de visita confirmada enviada pelo mobile. IDs de proprietário sempre derivam da sessão. Favoritar deve ser idempotente; o cliente registra visita após 3 minutos no estabelecimento e usa chave idempotente estável por estabelecimento + timestamp UTC. Visitas do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos são tratadas como duplicatas (D-052/D-053).
 
-**Contrato de visita:** definir campos mínimos, relógio/event timestamp e política para visita duplicada próxima no tempo. Receber apenas visita final e prova mínima aprovada; não receber trajetória GPS completa. O mobile mantém cache e fila offline. A API aceita o reenvio e reporta resultado inequívoco.
+**Contrato de visita:** o cliente registra a visita após o usuário permanecer 3 minutos no estabelecimento (D-052). A API recebe apenas o evento final, sem trajetória GPS; eventos usam chave idempotente estável por estabelecimento + timestamp UTC e duplicatas do mesmo usuário/estabelecimento em 30 minutos não criam nova visita (D-053). O cliente mantém dados offline sem prazo até a reconexão (D-051). Se a conta estiver desativada, a API recusa a sincronização, o app informa o usuário e oferece apagar a fila; nunca reatribuir operações a outra conta (D-054). A API aceita reenvio e reporta resultado inequívoco.
 
-**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas.
+**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas; eventos não contêm GPS bruto.
 
 ### Etapa 5 — Integração, operação e release
 

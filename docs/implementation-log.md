@@ -294,6 +294,57 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Edição, desativação, tentativa de reutilizar Benefit e erros de validação/autorizações negativas ainda não foram exercitados manualmente.
 - **Próxima etapa:** Se necessário, validar esses casos restantes do Catalog sem apagar os registros de demonstração; depois iniciar a etapa Engagement (favoritos e visitas), respeitando decisões pendentes sobre idempotência.
 
+### Edição, exclusividade e desativação de Benefit validadas — 2026-10-23
+
+- **Objetivo e estado:** Completar validações manuais do Catalog para edição de Benefit/Establishment, exclusividade do vínculo e desativação/reativação de Benefit.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** PATCH de Benefit substituiu a lista de descontos por dois itens e atualizou condições; PATCH de Establishment alterou o nome. Nova criação usando Benefit já associado retornou HTTP 409. Desativar Benefit retornou `active = false` e a consulta pública retornou zero; após PATCH `active = true`, a consulta voltou a retornar um. Os dados de teste permanecem no banco, com benefício ativo.
+- **Decisões/divergências:** Exclusividade, substituição dos descontos, atualização parcial e visibilidade de benefício inativo foram confirmadas no banco local. Nenhuma regra, rota ou migração mudou.
+- **Comandos e resultados:** Validação manual do usuário via PowerShell nas rotas `PATCH /v1/admin/benefits/{id}`, `PATCH /v1/admin/establishments/{id}`, `POST /v1/admin/establishments` (conflito 409), `POST /v1/admin/benefits/{id}/deactivation` e `GET /v1/establishments/{id}/benefits`; reativação por PATCH confirmada com um benefício visível. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Ainda não foram exercitados cenários de autorização negativa nem casos de validação de entrada inválida. A implementação/validação das visitas depende da etapa Engagement.
+- **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Definir regras de Engagement e sincronização offline antes da implementação.
+
+### Decisões iniciais de Engagement — 2026-10-23
+
+- **Objetivo e estado:** Registrar as decisões de permanência mínima para visita e retenção offline; nenhuma funcionalidade de Engagement foi implementada.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** O cliente registra visita após 3 minutos no estabelecimento, enviando somente evento final; dados/ações offline podem permanecer no cliente sem prazo até a reconexão.
+- **Decisões e pendências:** D-051 a D-053 confirmadas: dados offline até reconexão, visita após 3 minutos, chave idempotente por estabelecimento + timestamp UTC e janela de duplicidade de 30 minutos. P-011 está fechada. P-012 foi fechada posteriormente por D-054, registrado abaixo.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; `git diff --check` sem erros de whitespace. Nenhum teste ou execução da API realizado, pois não houve alteração de código.
+- **Limitações e riscos:** Não há endpoints nem persistência de favoritos/visitas implementados nesta etapa.
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização offline acordadas.
+
+### Tratamento da fila offline após desativação — 2026-10-23
+
+- **Objetivo e estado:** Registrar a decisão aprovada para fechar P-012 antes de implementar a sincronização de Engagement.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** Se a conta estiver desativada na reconexão, a API recusa sincronização; o app informa o usuário e oferece apagar a fila. Operações pendentes não podem ser enviadas sob outra conta.
+- **Decisão:** D-054 confirmada; P-012 fechada. Nenhuma rota ou funcionalidade foi implementada nesta atualização documental.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; sem build, testes ou execução da API por não haver alteração de código.
+- **Limitações/riscos:** Endpoints e fila offline de Engagement ainda não estão implementados. A exclusão da fila depende da ação do usuário no app.
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização acordadas na etapa Engagement.
+
+### Engagement — implementação inicial — 2026-10-23
+
+- **Objetivo e estado:** Implementar favoritos e visitas pertencentes à conta autenticada. Código e migração V4 aplicados ao banco local; validação HTTP manual ainda está pendente.
+- **Arquivos criados/alterados:** Novas entidades, DTOs, repositórios, serviço e controller em `engagement`; `V4__engagement_favorites_and_visits.sql`; ajustes em `IdentityService`/`AppUserRepository` para serializar gravações por conta e validar conta ativa; métodos de consulta de estabelecimento em `CatalogService`; handler de erro, README, contrato, plano, README das migrações, package-info e este diário.
+- **Rotas/migração:** `GET/PUT/DELETE /v1/me/favorites`, `GET/POST /v1/me/visits`; V4 cria `user_favorite` e `user_visit`, com FKs, unicidade/idempotência e índices.
+- **Comportamento:** Proprietário é sempre derivado da sessão. Favoritar exige estabelecimento e categoria ativos; remover favorito é idempotente. Visita exige estabelecimento existente, guarda apenas `establishmentId`, `occurredAt` e `receivedAt` (sem coordenadas), permite eventos offline sem limite de atraso e trata uma visita do mesmo usuário/estabelecimento em 30 minutos como duplicata. Eventos de locais depois desativados são aceitos para acomodar filas offline. Conta inativa/sessão revogada não consegue gravar; o cliente deve oferecer apagar a fila e nunca a enviar sob outra conta.
+- **Decisões/divergências:** Seguidas D-051 a D-054. Resposta de novo evento é 201; duplicata/reenvio é 200; favoritos retornam 204 em PUT/DELETE. O módulo mobile não está neste repositório, portanto a notificação e a ação de apagar fila ainda precisam ser implementadas no cliente.
+- **Comandos/resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`; fontes de teste compilaram, mas Surefire foi pulado e nenhum teste foi executado. `docker compose ps` mostrou PostgreSQL saudável. `spring-boot:run` conectou ao PostgreSQL 17.11, validou/aplicou V4 e inicializou Hibernate/repositórios, mas não pôde vincular a porta 8081 porque já estava ocupada; não encerrei o processo existente.
+- **Limitações/riscos restantes:** Falta inicializar a API desta build na porta 8081 e validar manualmente as cinco rotas, duplicidade e isolamento por usuário. O app mobile não está neste repositório; mensagem e limpeza da fila continuam a cargo do cliente. Nenhum teste automatizado foi adicionado ou executado.
+- **Próxima etapa:** Liberar a porta 8081 sem interromper processo alheio, iniciar esta build e validar favoritos, visitas, duplicidade, isolamento por usuário e acesso após desativação; depois integrar fila e aviso no app mobile.
+
+### Engagement — testes automatizados iniciais — 2026-10-23
+
+- **Objetivo e estado:** Substituir parte da validação manual do módulo Engagement por testes automatizados de serviço e controller. Suíte executada com sucesso.
+- **Arquivos criados/alterados:** `src/test/java/com/weg/benefits/engagement/EngagementServiceTests.java`, `src/test/java/com/weg/benefits/engagement/EngagementControllerTests.java` e este diário.
+- **Cobertura:** Proprietário de favoritos/visitas vem da conta autenticada; PUT de favorito não duplica; conta inativa não grava; visita nova persiste o proprietário, estabelecimento e horário do evento; evento repetido na janela de 30 minutos retorna o registro existente; controller responde `201` para novo evento e `200` para duplicata.
+- **Decisões/divergências:** Não houve mudança de comportamento da API, rotas ou migrações. São testes unitários com dependências simuladas mais o teste de contexto Spring já existente; eles não fazem chamadas HTTP reais nem validam as consultas JPA do módulo contra um banco isolado.
+- **Comandos e resultados:** `mvnw.cmd test` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`, 7 testes executados, 0 falhas, 0 erros, 0 ignorados. O teste de contexto conectou ao PostgreSQL de desenvolvimento, confirmou Flyway v4 atualizado e carregou o contexto Spring. `git diff --check` passou.
+- **Limitações/riscos:** Permanecem sem cobertura automatizada de integração HTTP/autorização Spring Security e de persistência real dos repositórios de Engagement. Os testes de serviço verificam as regras sem depender de estado do banco, SMTP ou app mobile.
+- **Próxima etapa:** Criar testes de integração isolados para endpoints e persistência de Engagement quando o projeto definir/instalar infraestrutura de banco de teste; os testes atuais permitem validar regressões das regras principais sem repetir os fluxos manualmente.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

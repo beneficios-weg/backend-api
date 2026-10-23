@@ -166,6 +166,17 @@ public class CatalogService {
                 .orElseThrow(() -> CatalogException.notFound("Estabelecimento")));
     }
 
+    @Transactional(readOnly = true)
+    public Establishment requireActiveEstablishmentForEngagement(UUID id) {
+        return establishments.findActiveById(id)
+                .orElseThrow(() -> CatalogException.notFound("Estabelecimento"));
+    }
+
+    @Transactional(readOnly = true)
+    public Establishment requireExistingEstablishmentForEngagement(UUID id) {
+        return establishment(id);
+    }
+
     public BenefitResponse createBenefit(BenefitCreateRequest request) {
         validateDiscounts(request.discounts());
         return BenefitResponse.from(benefits.save(new Benefit(request.audience().trim(),
