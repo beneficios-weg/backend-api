@@ -294,6 +294,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** Edição, desativação, tentativa de reutilizar Benefit e erros de validação/autorizações negativas ainda não foram exercitados manualmente.
 - **Próxima etapa:** Se necessário, validar esses casos restantes do Catalog sem apagar os registros de demonstração; depois iniciar a etapa Engagement (favoritos e visitas), respeitando decisões pendentes sobre idempotência.
 
+### Edição, exclusividade e desativação de Benefit validadas — 2026-10-23
+
+- **Objetivo e estado:** Completar validações manuais do Catalog para edição de Benefit/Establishment, exclusividade do vínculo e desativação/reativação de Benefit.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** PATCH de Benefit substituiu a lista de descontos por dois itens e atualizou condições; PATCH de Establishment alterou o nome. Nova criação usando Benefit já associado retornou HTTP 409. Desativar Benefit retornou `active = false` e a consulta pública retornou zero; após PATCH `active = true`, a consulta voltou a retornar um. Os dados de teste permanecem no banco, com benefício ativo.
+- **Decisões/divergências:** Exclusividade, substituição dos descontos, atualização parcial e visibilidade de benefício inativo foram confirmadas no banco local. Nenhuma regra, rota ou migração mudou.
+- **Comandos e resultados:** Validação manual do usuário via PowerShell nas rotas `PATCH /v1/admin/benefits/{id}`, `PATCH /v1/admin/establishments/{id}`, `POST /v1/admin/establishments` (conflito 409), `POST /v1/admin/benefits/{id}/deactivation` e `GET /v1/establishments/{id}/benefits`; reativação por PATCH confirmada com um benefício visível. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Ainda não foram exercitados cenários de autorização negativa nem casos de validação de entrada inválida. O teste de visita do Engagement depende de fechar P-011.
+- **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Fechar P-011 e P-012 antes de implementar Engagement e sincronização offline.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
