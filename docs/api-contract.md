@@ -7,6 +7,8 @@
 - Prefixo `/v1`; JSON UTF-8; HTTPS em ambientes compartilhados.
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
 - IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
+
+**Modelo Catalog implementado em código; V3 foi aplicada ao banco local em 2026-10-21:** Benefit é cadastrado com um ou mais Discounts na mesma tela e começa inativo. Depois, Establishment é criado com Category e Benefit existentes. Cada Establishment recebe exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; o benefício ativa no primeiro vínculo e permanece ativo/inativo conforme edição manual após isso (D-044 a D-050). A contagem anterior à aplicação confirmou zero linhas em Establishment e Benefit. Em outros bancos, V3 falha se essas tabelas tiverem dados, pois o campo textual antigo não pode ser convertido automaticamente em `value` e `description`.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -60,7 +62,16 @@ Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
 
-Cada família tem consulta/listagem, criação, edição parcial e desativação lógica, protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. Todos os campos de Benefit, inclusive sua relação com Establishment, são obrigatórios; público, contato e desconto usam TEXT enquanto seus limites seguem pendentes (P-007). Benefit não tem nome/título.
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit não tem mais o texto `discount`: exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. `BenefitResponse.establishmentId` é `null` até o vínculo; `EstablishmentResponse.benefitId` identifica o benefício exclusivo.
+
+Exemplo do fluxo administrativo:
+
+1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact`, `conditions` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
+2. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
+3. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
+4. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+
+`V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 
 ## Ações pessoais — Engagement
 

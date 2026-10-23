@@ -13,6 +13,7 @@ import com.weg.benefits.catalog.CatalogDtos.CategoryCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryOptionsResponse;
 import com.weg.benefits.catalog.CatalogDtos.CategoryPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryResponse;
+import com.weg.benefits.catalog.CatalogDtos.DiscountInput;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentResponse;
@@ -116,6 +117,7 @@ public class CatalogService {
                 request.postalCode(), request.streetNumber(), request.street().trim(), request.district().trim(),
                 request.city().trim(), upper(request.state()), request.latitude(), request.longitude(),
                 request.altitude(), imageUrl, category, linkedServices);
+        assignBenefit(value, request.benefitId());
         return EstablishmentResponse.from(establishments.save(value));
     }
 
@@ -128,6 +130,7 @@ public class CatalogService {
         Establishment value = establishment(id);
         Category category = request.categoryId() == null ? null : activeCategory(request.categoryId());
         Set<ServiceOption> linkedServices = request.serviceIds() == null ? null : activeServices(request.serviceIds());
+        if (request.benefitId() != null) assignBenefit(value, request.benefitId());
         value.update(trim(request.name()), trim(request.description()), request.postalCode(), request.streetNumber(),
                 trim(request.street()), trim(request.district()), trim(request.city()), upper(request.state()),
                 request.latitude(), request.longitude(), request.altitude(), imageUrl, category,
@@ -164,24 +167,23 @@ public class CatalogService {
     }
 
     public BenefitResponse createBenefit(BenefitCreateRequest request) {
-        Establishment establishment = activeEstablishment(request.establishmentId());
+        validateDiscounts(request.discounts());
         return BenefitResponse.from(benefits.save(new Benefit(request.audience().trim(),
-                request.participationInstructions().trim(), request.contact().trim(), request.discount().trim(),
-                request.conditions().trim(), establishment)));
+                request.participationInstructions().trim(), request.contact().trim(),
+                request.conditions().trim(), discounts(request.discounts()))));
     }
 
     public BenefitResponse updateBenefit(UUID id, BenefitPatchRequest request) {
         requireChanges(request.hasChanges());
         validateOptionalText(request.audience(), "público");
         validateOptionalText(request.contact(), "contato");
-        validateOptionalText(request.discount(), "desconto");
         validateOptionalLength(request.participationInstructions(), 50, 300, "instruções de participação");
         validateOptionalLength(request.conditions(), 10, 300, "condições");
+        if (request.discounts() != null) validateDiscounts(request.discounts());
         Benefit value = benefit(id);
-        Establishment establishment = request.establishmentId() == null ? null
-                : activeEstablishment(request.establishmentId());
         value.update(trim(request.audience()), trim(request.participationInstructions()), trim(request.contact()),
-                trim(request.discount()), trim(request.conditions()), establishment, request.active());
+                trim(request.conditions()), request.discounts() == null ? null : discounts(request.discounts()),
+                request.active());
         return BenefitResponse.from(value);
     }
 
@@ -217,15 +219,33 @@ public class CatalogService {
     private Establishment establishment(UUID id) {
         return establishments.findById(id).orElseThrow(() -> CatalogException.notFound("Estabelecimento"));
     }
-    private Establishment activeEstablishment(UUID id) {
-        Establishment value = establishment(id);
-        if (!value.isActive() || !value.getCategory().isActive()) {
-            throw CatalogException.invalid("O estabelecimento selecionado está inativo.");
-        }
-        return value;
-    }
     private Benefit benefit(UUID id) {
         return benefits.findById(id).orElseThrow(() -> CatalogException.notFound("Benefício"));
+    }
+    private void assignBenefit(Establishment establishment, UUID benefitId) {
+        Benefit selected = benefits.findByIdForUpdate(benefitId)
+                .orElseThrow(() -> CatalogException.notFound("Benefício"));
+        if (selected.getDiscounts().isEmpty()) {
+            throw CatalogException.invalid("O benefício selecionado precisa ter ao menos um desconto.");
+        }
+        if (selected.getEstablishment() != null && selected.getEstablishment() != establishment) {
+            throw CatalogException.conflict("O benefício já está vinculado a outro estabelecimento.");
+        }
+        Benefit previous = establishment.getBenefit();
+        if (previous != null && previous != selected) previous.unlinkFrom(establishment);
+        selected.linkTo(establishment);
+    }
+    private static List<Discount> discounts(List<DiscountInput> values) {
+        return values.stream().map(value -> new Discount(value.value().trim(), value.description().trim())).toList();
+    }
+    private static void validateDiscounts(List<DiscountInput> values) {
+        if (values == null || values.isEmpty()) {
+            throw CatalogException.invalid("O benefício deve possuir ao menos um desconto.");
+        }
+        for (DiscountInput value : values) {
+            validateLength(value.value(), 2, 15, "valor do desconto");
+            validateLength(value.description(), 10, 300, "descrição do desconto");
+        }
     }
     private Set<ServiceOption> activeServices(List<UUID> ids) {
         if (ids == null || ids.isEmpty()) return Set.of();
@@ -258,6 +278,11 @@ public class CatalogService {
     }
     private static void validateOptionalLength(String value, int min, int max, String field) {
         if (value != null && (value.trim().length() < min || value.trim().length() > max)) {
+            throw CatalogException.invalid("O campo " + field + " deve ter entre " + min + " e " + max + " caracteres.");
+        }
+    }
+    private static void validateLength(String value, int min, int max, String field) {
+        if (value == null || value.trim().length() < min || value.trim().length() > max) {
             throw CatalogException.invalid("O campo " + field + " deve ter entre " + min + " e " + max + " caracteres.");
         }
     }

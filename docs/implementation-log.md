@@ -184,6 +184,116 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos restantes:** Não é seguro converter `UUID` em inteiros nem separar o texto de desconto em valor/descrição sem confirmar impacto na API/clientes e definir a preservação de dados existentes. Também faltam definições inequívocas para a cardinalidade e para as regras de username, ícones e estado.
 - **Próxima dependência/módulo:** Resolver P-017 a P-022 com a equipe; então especificar uma migração nova de reconciliação de Catalog e atualizar entidades, DTOs e contrato, preservando V2.
 
+### Decisões após revisão do modelo Catalog — 2026-10-20
+
+- **Objetivo e estado:** Registrar as respostas da equipe à modelagem atualizada. Decisões de produto consolidadas; código e banco ainda não reconciliados.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhuma classe ou migração foi alterada.
+- **Modelo/contrato:** IDs do catálogo continuam UUID; Establishment e Benefit têm relação 1:1; cada Benefit terá um ou mais Discounts. Iconify, username D-022 e UF como sigla permanecem.
+- **Decisões e pendências:** Registradas D-043 a D-046; P-017 a P-022 foram resolvidas. P-023 define se Establishment pode existir temporariamente sem Benefit, P-024 confirma obrigatoriedade de value/description, e P-025 verifica/preserva dados já gravados. A resposta ao item 3 foi interpretada como “pelo menos um Discount por Benefit”.
+- **Validações executadas:** Documentação revisada e diff verificado. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** V2 ainda permite múltiplos benefícios por estabelecimento e mantém `discount` como texto. Não alterá-la; criar migração nova após fechar o fluxo de criação e o mapeamento dos dados.
+- **Próxima dependência/módulo:** Confirmar P-023 a P-025; então atualizar Catalog com migração Flyway nova, entidades, DTOs e contrato.
+
+### Fluxo de Benefit/Discount — 2026-10-20
+
+- **Objetivo e estado:** Registrar como os usuários do desktop irão gerenciar benefícios, descontos e pré-requisitos para estabelecimento. Decisões de produto adicionadas; o desenho HTTP aguarda o protótipo.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento aprovado:** `Discount.value` (2–15) e `Discount.description` (10–300) são obrigatórios. Benefício e descontos são criados/editados na mesma tela; Establishment só pode ser criado quando Category, Benefit e Discount existirem.
+- **Decisões e pendências:** D-047/D-048 registram as decisões. P-023 aguarda o protótipo para definir DTOs/operação HTTP e limite transacional; P-025 continua exigindo uma estratégia que preserve dados já gravados.
+- **Validações executadas:** Revisão documental e `git diff --check`; nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** Não se deve implementar o fluxo de Catalog por suposição de payload ou de criação antes de analisar o protótipo. V2 não deve ser reescrita.
+- **Próxima dependência/módulo:** Receber o protótipo, fechar P-023 e verificar dados locais; depois criar migração nova e alinhar entidades, serviços, DTOs e contrato.
+
+### Revisão do protótipo de Benefit — 2026-10-20
+
+- **Objetivo e estado:** Registrar o fluxo visível nas telas de criação e edição de benefício. Fluxo de interface entendido; cardinalidade inversa ainda pendente.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento visível:** Benefício é criado/edita-se numa tela própria com um ou mais descontos; começa inativo, ativa na primeira associação a estabelecimento, e desativação manual permanece mesmo com vínculos. A criação do estabelecimento requer categoria e benefício/desconto existentes.
+- **Decisões e divergências:** Value/description obrigatórios confirmados (D-047); telas adicionam D-049. O rótulo plural “Estabelecimentos vinculados” sugere que um Benefit pode estar em múltiplos Establishments, mas P-026 registra a necessidade de confirmação contra a resposta anterior de relação 1:1.
+- **Validações executadas:** Inspeção visual das duas telas enviadas e revisão dos documentos. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** A direção da relação Benefit–Establishment determina FK, unicidade e payloads da API; não implementá-la até confirmar P-026. A consulta ao PostgreSQL local permanece indisponível neste ambiente.
+- **Próxima dependência/módulo:** Confirmar se Benefit pode ser reutilizado por vários Establishments; depois definir associação, atualizar Catalog e preparar migração nova com preservação de dados.
+
+### Catalog — benefício exclusivo e descontos estruturados — 2026-10-20
+
+- **Objetivo e estado:** Aplicar a decisão de que Benefit é exclusivo de um Establishment e implementar o fluxo Benefit/Discount aprovado. Código compilado; V3 ainda não foi aplicada e a etapa permanece parcial até validação no PostgreSQL.
+- **Arquivos criados/alterados:** Criado `src/main/java/com/weg/benefits/catalog/Discount.java` e `src/main/resources/db/migration/V3__benefit_discounts_and_exclusive_establishment.sql`. Alterados `Benefit.java`, `Establishment.java`, `BenefitRepository.java`, `CatalogDtos.java`, `CatalogService.java`, README, AGENTS, contrato, plano, registro de decisões, modelo de dados, índice de documentação, README de migrações e este log.
+- **Comportamento/rotas:** Sem novas rotas. `POST/PATCH /v1/admin/benefits` passa a receber a lista de descontos com `value` (2–15) e `description` (10–300), e Benefit começa inativo sem estabelecimento. `POST /v1/admin/establishments` passa a exigir `benefitId` e `categoryId`; o vínculo é exclusivo e ativa o benefício apenas no primeiro vínculo. PATCH de estabelecimento permite associar/trocar benefício; não permite reutilizar benefício vinculado a outro estabelecimento. V3 cria `benefit_discount`, adiciona `establishment.benefit_id` obrigatório e único, registra `first_linked_at` e remove o desconto textual antigo, sem editar V2.
+- **Decisões e divergências:** D-050/P-026 confirmam Benefit exclusivo de um estabelecimento; Benefit pode existir sem vínculo antes. A legenda plural “Estabelecimentos vinculados” no protótipo entra em conflito e deve ser ajustada no cliente. V3 falha com segurança se houver qualquer linha em `establishment` ou `benefit`; P-025 requer verificar e mapear dados antes da aplicação.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`). `git diff --check` passou. Não foram criados nem executados testes. A migração não foi aplicada e a API não foi iniciada; o conteúdo local do PostgreSQL, health e endpoints não foram verificados nesta etapa.
+- **Limitações/riscos:** Se o banco local já tiver estabelecimentos ou benefícios, a atualização falhará deliberadamente até haver mapeamento manual/revisado dos dados; não converter o desconto legado por inferência. A constraint da tabela garante que todo estabelecimento tenha um benefício exclusivo; a regra de ao menos um desconto por benefício é validada pela API. O cliente desktop deve alinhar a legenda plural à cardinalidade aprovada.
+- **Próxima dependência/módulo:** Verificar contagens do banco local, decidir como mapear dados se houver, aplicar V3 e validar manualmente na porta 8081 criação/edição de Benefit/Discount, associação exclusiva, ativação inicial e conflitos; depois seguir para Engagement.
+
+### Catalog — aplicação da migração V3 — 2026-10-21
+
+- **Objetivo e estado:** Conferir se havia dados legados antes da migração e aplicar o novo esquema Catalog no banco local.
+- **Arquivos alterados:** `docs/api-contract.md`, `docs/decision-register.md`, `docs/README.md` e este log.
+- **Comportamento/rotas/migrações:** O usuário executou `docker compose ps` e confirmou PostgreSQL healthy. As contagens pré-migração de `establishment` e `benefit` foram zero. Ao iniciar a API, Flyway validou três migrações, encontrou esquema v2 e aplicou V3 com sucesso; o esquema local avançou para v3. Não houve alteração de rotas neste trabalho.
+- **Decisões/divergências:** Nenhum mapeamento de dados foi necessário para o banco local. P-025 está resolvido para essa base; a proteção permanece para outras bases com dados. A V3 está aplicada, mas a API não completou o início HTTP neste ambiente.
+- **Comandos e resultados:** `docker compose ps` do usuário mostrou `weg-benefits-postgres` healthy. Consulta SQL do usuário retornou zero estabelecimentos e zero benefícios. `mvnw.cmd spring-boot:run` com Microsoft JDK 21.0.12.1 conectou ao PostgreSQL 17.11 e registrou `Successfully applied 1 migration ... now at version v3`. A inicialização avançou até o JPA; Tomcat falhou ao criar seu seletor NIO com `SocketException: Invalid argument: connect` ao tentar loopback. A primeira tentativa sem elevação foi bloqueada com `Permission denied: getsockopt`. Health HTTP e rotas Catalog não foram verificadas. Docker CLI não estava acessível ao processo de verificação posterior (`dockerDesktopLinuxEngine: Access denied`), então não foi feita consulta adicional de schema.
+- **Limitações/riscos:** O banco local está migrado, mas não se confirmou o status `/actuator/health` nem o comportamento HTTP. O erro de Tomcat parece restrição de loopback do ambiente de execução; o usuário precisa iniciar a API localmente na porta 8081 para validar o health e seguir os fluxos manuais.
+- **Próxima dependência/módulo:** Iniciar `.\mvnw.cmd spring-boot:run` localmente com Java 21 e confirmar `/actuator/health`; então validar CRUD de Benefit/Discount e associação exclusiva do Establishment, sem rodar testes automatizados.
+
+### Catalog — health confirmado após V3 — 2026-10-21
+
+- **Objetivo e estado:** Confirmar que a API local iniciou após configurar Maven para usar Java 21 e aplicar V3.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O usuário confirmou `UP` em `http://localhost:8081/actuator/health`; a API está acessível e responde ao health. V3 já havia sido aplicada pelo Flyway. Nenhuma rota de negócio foi exercitada.
+- **Decisões/divergências:** A falha anterior de inicialização do Maven era Java 8 no terminal, que não carrega o plugin do Spring Boot; com Java 21 a aplicação iniciou no ambiente do usuário.
+- **Comandos e resultados:** Resultado fornecido pelo usuário: `(Invoke-RestMethod http://localhost:8081/actuator/health).status` retornou `UP`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Health confirma aplicação/banco conforme configuração, mas não valida autenticação nem operações do Catalog.
+- **Próxima dependência/módulo:** Validar manualmente criação/edição de Benefit com descontos e associação exclusiva ao criar Establishment; depois seguir para Engagement.
+
+### Correção do modo CLI para provisionamento do primeiro ADMIN — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha relatada ao iniciar o provisionamento CLI sem servidor web. A alteração foi compilada; o provisionamento ainda precisa ser repetido pelo usuário.
+- **Arquivos alterados:** `src/main/java/com/weg/benefits/identity/IdentityService.java` e este diário.
+- **Comportamento:** `IdentityService` agora recebe o repositório de sessões por `ObjectProvider`, resolvendo-o somente nas operações que revogam sessões. O contexto CLI pode iniciar sem o bean de sessões HTTP; na aplicação web, atualização/desativação ainda exige o repositório e revoga as sessões correspondentes.
+- **Decisões/divergências:** A causa foi a ausência de `FindByIndexNameSessionRepository` quando `spring.main.web-application-type=none`. Nenhuma regra de Identity nem migração foi alterada.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`). A primeira tentativa não iniciou o Maven porque um caminho incorreto de `JAVA_HOME` foi usado; repetida com o JDK existente, compilou. Nenhum teste foi criado ou executado; a inicialização CLI e SMTP ainda não foram repetidos.
+- **Limitações/riscos:** O usuário precisa repetir o comando CLI em terminal interativo com PostgreSQL e SMTP configurados para confirmar o provisionamento completo.
+- **Próxima etapa:** Reexecutar o provisionamento CLI e confirmar que ele solicita usuário/e-mail/senha antes de persistir o primeiro ADMIN.
+
+### Isolamento da configuração HTTP no modo CLI — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha seguinte do provisionamento CLI, causada por componentes de autenticação HTTP carregados num contexto sem servidor web. Pacote compilado e inicialização manual validada até o prompt; nenhum ADMIN foi provisionado.
+- **Arquivos criados/alterados:** Criado `src/main/java/com/weg/benefits/config/PasswordEncodingConfiguration.java`; alterados `src/main/java/com/weg/benefits/config/WebSecurityConfiguration.java`, `src/main/java/com/weg/benefits/identity/AuthController.java` e este log.
+- **Comportamento:** Codificador de senha continua disponível no CLI. Configuração HTTP e `AuthController` só são carregados em aplicação Servlet. O CLI iniciou com PostgreSQL 17.11, validou três migrações, confirmou esquema v3 atualizado e alcançou os prompts de provisionamento; a execução foi interrompida antes da coleta completa e envio SMTP.
+- **Decisões/divergências:** A exceção relatada ocorreu porque `AuthenticationConfiguration` não existe em `web-application-type=none`. A primeira verificação de runtime foi bloqueada pelo sandbox ao abrir conexão local; repetida com acesso local, a inicialização alcançou o prompt. Nenhuma regra de negócio ou migração mudou.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`; testes ignorados). O comando do jar em modo CLI conectou ao banco e chegou a `Username do primeiro ADMIN:`. Foi interrompido antes da conclusão do provisionamento; nenhum teste foi criado ou executado.
+- **Limitações/riscos:** Ainda falta executar o fluxo completo interativamente com SMTP configurado para confirmar aceitação do Gmail e criação do primeiro ADMIN.
+- **Próxima etapa:** Reexecutar o comando do README em terminal interativo, inserir os dados do primeiro ADMIN e confirmar a mensagem de sucesso do SMTP; depois iniciar API na porta 8081 e verificar health/login.
+
+### Provisionamento do primeiro ADMIN confirmado — 2026-10-21
+
+- **Objetivo e estado:** Concluir a validação manual do provisionamento inicial após corrigir o modo CLI. O usuário confirmou que a conta ADMIN foi criada.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O CLI conectou ao PostgreSQL 17.11 com esquema v3 atualizado, recebeu os dados interativamente e informou “Primeiro ADMIN provisionado e mensagem aceita pelo SMTP.” Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** A confirmação do usuário demonstra que o banco persistiu o primeiro ADMIN e que o Gmail aceitou o envio. Dados pessoais e senha não são reproduzidos neste registro.
+- **Comandos e resultados:** O usuário executou `mvnw.cmd -DskipTests package` com Java 21 (`BUILD SUCCESS`) e o JAR com `--app.cli.provision-admin=true --spring.main.web-application-type=none`; o resultado final informou sucesso. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Login pela API ainda não foi validado após o provisionamento.
+- **Próxima etapa:** Iniciar a API na porta 8081, confirmar `/actuator/health` e autenticar com o username ou e-mail do ADMIN recém-provisionado.
+
+### Login do primeiro ADMIN validado — 2026-10-21
+
+- **Objetivo e estado:** Validar manualmente health, login por username e recuperação do perfil autenticado após o provisionamento inicial.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário confirmou health `UP`; `POST /v1/auth/login` aceitou credenciais pelo username e estabeleceu sessão; `GET /v1/me` retornou o perfil com papel `ADMIN` e conta ativa. Nenhum endpoint ou migração foi alterado.
+- **Decisões/divergências:** Provisionamento e autenticação inicial estão validados manualmente neste banco local. E-mail e outros dados pessoais foram omitidos deste registro.
+- **Comandos e resultados:** Resultados fornecidos pelo usuário via PowerShell: health `UP`; login sem erro; `/v1/me` retornou `id: 1`, username `admin`, role `ADMIN` e `active: True`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** CRUD de usuários e catálogo ainda não foi exercitado nesta validação; isso não valida todos os fluxos de autorização.
+- **Próxima etapa:** Validar manualmente o CRUD administrativo do Catalog conforme a tela aprovada, começando por criar Benefit com descontos e depois Establishment vinculado; após isso, seguir para Engagement.
+
+### Fluxo principal do Catalog validado manualmente — 2026-10-23
+
+- **Objetivo e estado:** Validar pelo PowerShell a criação e leitura encadeada de Category, Service, Benefit/Discount e Establishment com sessão ADMIN. Fluxo principal validado no banco local.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário criou Category, Service e Benefit com desconto; vinculou o Benefit a um Establishment; consultou o benefício e a leitura pública autenticada. A resposta confirmou `Benefit.active = true`, `Benefit.establishmentId` igual ao ID do Establishment e um benefício retornado (`totalElements = 1`). Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** O fluxo confirma a ativação no primeiro vínculo, a associação exclusiva refletida nas respostas e a visibilidade do benefício no estabelecimento ativo. Os registros de demonstração permanecem no banco local; IDs não foram copiados para este diário.
+- **Comandos e resultados:** Resultados informados pelo usuário após chamadas PowerShell autenticadas aos endpoints `/v1/admin/categories`, `/v1/admin/services`, `/v1/admin/benefits`, `/v1/admin/establishments`, `/v1/admin/benefits/{id}` e `/v1/establishments/{id}/benefits`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Edição, desativação, tentativa de reutilizar Benefit e erros de validação/autorizações negativas ainda não foram exercitados manualmente.
+- **Próxima etapa:** Se necessário, validar esses casos restantes do Catalog sem apagar os registros de demonstração; depois iniciar a etapa Engagement (favoritos e visitas), respeitando decisões pendentes sobre idempotência.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.

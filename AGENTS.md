@@ -27,6 +27,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 - A localização em segundo plano é detectada pelo cliente mobile e seus módulos nativos. A API recebe o evento de visita final e não mantém trilhas contínuas de GPS.
 - O app cliente mantém cache e fila offline. A API deve aceitar reenvio idempotente das operações aprovadas.
 
+**Decisões do modelo Catalog — revisão de 2026-10-20:** Category, Service, Establishment, Benefit e Discount usam UUID. Cada Establishment exige exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; Benefit pode ser criado sem vínculo para permitir o fluxo da tela administrativa. Cada Benefit exige pelo menos um Discount, com `value` obrigatório (2–15 caracteres) e `description` obrigatório (10–300). Benefício começa inativo e ativa ao primeiro vínculo; desativação manual permanece. A legenda plural “Estabelecimentos vinculados” do protótipo conflita com a decisão de exclusividade e deve ser ajustada no cliente. Establishment exige Category ativa e Benefit existente com desconto. Permanecem Iconify, username D-022 e Estado como sigla UF. A migração nova V3 interrompe com segurança se existirem linhas em Establishment ou Benefit; não editar V2 nem descartar dados.
+
 ## Regras de implementação
 
 **Atualização de Identity — 2026-10-19:** as rotas de autenticação por sessão e administração de usuários estão implementadas parcialmente; a desativação é `POST /v1/admin/users/{id}/deactivation` conforme D-035. Considere obsoleta a frase acima que descreve o código como stateless e sem autenticação. Consulte `docs/implementation-log.md` para o estado validado. As demais regras de não inferir pendências permanecem vigentes.

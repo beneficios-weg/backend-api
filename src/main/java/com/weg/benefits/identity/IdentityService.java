@@ -6,6 +6,7 @@ import com.weg.benefits.identity.IdentityDtos.CreateUserRequest;
 import com.weg.benefits.identity.IdentityDtos.UpdateUserRequest;
 import com.weg.benefits.identity.IdentityDtos.UserResponse;
 import com.weg.benefits.identity.IdentityDtos.UserPageResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,11 +22,11 @@ public class IdentityService {
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final CredentialMailSender credentialMailSender;
-    private final FindByIndexNameSessionRepository<? extends Session> sessions;
+    private final ObjectProvider<FindByIndexNameSessionRepository<? extends Session>> sessions;
 
     public IdentityService(AppUserRepository users, PasswordEncoder passwordEncoder,
             CredentialMailSender credentialMailSender,
-            FindByIndexNameSessionRepository<? extends Session> sessions) {
+            ObjectProvider<FindByIndexNameSessionRepository<? extends Session>> sessions) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.credentialMailSender = credentialMailSender;
@@ -84,8 +85,7 @@ public class IdentityService {
                     "Uma conta ADMIN não pode ser rebaixada.");
         }
         user.updateIdentity(username, email, requestedRole);
-        sessions.findByPrincipalName(previousUsername).values()
-                .forEach(session -> sessions.deleteById(session.getId()));
+        revokeSessions(previousUsername);
         return UserResponse.from(user);
     }
 
@@ -104,8 +104,7 @@ public class IdentityService {
             return;
         }
         target.deactivate();
-        sessions.findByPrincipalName(target.getUsername()).values()
-                .forEach(session -> sessions.deleteById(session.getId()));
+        revokeSessions(target.getUsername());
     }
 
     @Transactional
@@ -159,6 +158,12 @@ public class IdentityService {
             throw new IdentityException(HttpStatus.CONFLICT, "Conta em uso",
                     "O nome de usuário ou e-mail já está associado a uma conta.");
         }
+    }
+
+    private void revokeSessions(String username) {
+        FindByIndexNameSessionRepository<? extends Session> repository = sessions.getObject();
+        repository.findByPrincipalName(username).values()
+                .forEach(session -> repository.deleteById(session.getId()));
     }
 
     private void validateUsername(String username) {

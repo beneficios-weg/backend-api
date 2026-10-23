@@ -43,7 +43,7 @@ Com base no relato da equipe em 16/10/2026: projeto Spring Boot 4.1.1 / Java 21,
 
 ## Estado após a fundação parcial de Identity — 2026-10-19
 
-Identity já tem migração de usuários/sessões, login por username ou e-mail, logout, perfil próprio, rotas administrativas de usuários e CLI interativo para o primeiro ADMIN. Consulte o contrato para rotas; o log registra as verificações realmente executadas. Catálogo e engagement continuam sem funcionalidades.
+Identity já tem migração de usuários/sessões, login por username ou e-mail, logout, perfil próprio, rotas administrativas de usuários e CLI interativo para o primeiro ADMIN. Catalog tem rotas de administração e leitura; V3 foi aplicada ao banco local, mas as rotas ainda precisam de validação HTTP manual. Engagement continua sem funcionalidades. Consulte o contrato e o log para estado e verificações reais.
 
 ## Decisões de Identity atualizadas
 
