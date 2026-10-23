@@ -284,6 +284,16 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Limitações/riscos:** CRUD de usuários e catálogo ainda não foi exercitado nesta validação; isso não valida todos os fluxos de autorização.
 - **Próxima etapa:** Validar manualmente o CRUD administrativo do Catalog conforme a tela aprovada, começando por criar Benefit com descontos e depois Establishment vinculado; após isso, seguir para Engagement.
 
+### Fluxo principal do Catalog validado manualmente — 2026-10-23
+
+- **Objetivo e estado:** Validar pelo PowerShell a criação e leitura encadeada de Category, Service, Benefit/Discount e Establishment com sessão ADMIN. Fluxo principal validado no banco local.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário criou Category, Service e Benefit com desconto; vinculou o Benefit a um Establishment; consultou o benefício e a leitura pública autenticada. A resposta confirmou `Benefit.active = true`, `Benefit.establishmentId` igual ao ID do Establishment e um benefício retornado (`totalElements = 1`). Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** O fluxo confirma a ativação no primeiro vínculo, a associação exclusiva refletida nas respostas e a visibilidade do benefício no estabelecimento ativo. Os registros de demonstração permanecem no banco local; IDs não foram copiados para este diário.
+- **Comandos e resultados:** Resultados informados pelo usuário após chamadas PowerShell autenticadas aos endpoints `/v1/admin/categories`, `/v1/admin/services`, `/v1/admin/benefits`, `/v1/admin/establishments`, `/v1/admin/benefits/{id}` e `/v1/establishments/{id}/benefits`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Edição, desativação, tentativa de reutilizar Benefit e erros de validação/autorizações negativas ainda não foram exercitados manualmente.
+- **Próxima etapa:** Se necessário, validar esses casos restantes do Catalog sem apagar os registros de demonstração; depois iniciar a etapa Engagement (favoritos e visitas), respeitando decisões pendentes sobre idempotência.
+
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
