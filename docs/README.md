@@ -28,6 +28,8 @@ registro de decisões.
 - `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
 - `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
 - `implementation-log.md`: estado real das etapas, baseado em mudanças e validações efetivamente realizadas.
+- [`modelo-de-dados.md`](modelo-de-dados.md): modelo aprovado atualmente e divergências da revisão mais recente em reconciliação.
+- [`referencia/WEG-Benefits-Modelagem-revisada.pdf`](referencia/WEG-Benefits-Modelagem-revisada.pdf): PDF de modelagem recebido em 2026-10-20, preservado como material de referência; consulte o registro de decisões para conflitos pendentes.
 
 ## Como manter estes documentos
 
@@ -41,7 +43,7 @@ Com base no relato da equipe em 16/10/2026: projeto Spring Boot 4.1.1 / Java 21,
 
 ## Estado após a fundação parcial de Identity — 2026-10-19
 
-Identity já tem migração de usuários/sessões, login por username ou e-mail, logout, perfil próprio, rotas administrativas de usuários e CLI interativo para o primeiro ADMIN. Consulte o contrato para rotas; o log registra as verificações realmente executadas. Catálogo e engagement continuam sem funcionalidades.
+Identity já tem migração de usuários/sessões, login por username ou e-mail, logout, perfil próprio, rotas administrativas de usuários e CLI interativo para o primeiro ADMIN. Catalog tem rotas de administração e leitura; V3 foi aplicada ao banco local, mas as rotas ainda precisam de validação HTTP manual. Engagement continua sem funcionalidades. Consulte o contrato e o log para estado e verificações reais.
 
 ## Decisões de Identity atualizadas
 

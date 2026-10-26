@@ -145,6 +145,214 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 - **Validações executadas e resultados:** Com Microsoft JDK 21.0.12.1, `mvnw.cmd -Dtest=CredentialMailSenderTests test` passou (2 testes, 0 falhas/erros). Os testes simulam a troca de token, validam o payload codificado e verificam mensagem de erro sem detalhes do provedor. `mvnw.cmd test` compilou e executou os dois testes novos, mas o teste de contexto existente falhou ao conectar a `localhost:5432`; Docker/PostgreSQL não estava disponível. A primeira tentativa usou Java 8 do PATH e falhou na compilação; a repetição com JDK 21 compilou o código principal e de teste.
 - **Problemas/riscos restantes:** Não foi feita chamada real à Gmail API nem configurado Render; credenciais não foram compartilhadas nem gravadas no código. O refresh token atual foi autorizado com app em Testing e precisa ser renovado após sete dias caso o app não seja publicado/verificado. O envio de senha reutilizável por e-mail continua sendo risco aceito. Existe risco de Gmail aceitar a mensagem e a transação do banco falhar posteriormente, resultando em credenciais enviadas para conta não persistida.
 - **Próxima dependência/módulo:** Configurar os quatro valores como segredos/variável no ambiente de execução e testar uma criação controlada com Gmail real; iniciar o app OAuth em Testing enquanto valida o fluxo e resolver publicação/verificação antes de depender do token em produção.
+### Preferências de fluxo Git e execução local — 2026-10-19
+
+- **Objetivo e estado:** Registrar que novas pull requests devem ter `develop` como base e que a aplicação local deve iniciar na porta `8081`.
+- **Arquivos alterados:** `AGENTS.md`, `README.md`, `src/main/resources/application.properties` e este log.
+- **Comportamento:** `server.port` usa `SERVER_PORT` com default `8081`; documentação de execução e endpoints foi atualizada. Instruções de trabalho agora orientam abrir PRs para `develop` por padrão.
+- **Validação:** Preferência aplicada em branch criada de `origin/develop` após confirmar que o commit da fundação já está integrado a `develop`. Nenhum teste foi executado para essa alteração de configuração/documentação.
+- **Próximo passo:** Para a próxima mudança de código, partir de `develop`, iniciar na porta 8081 e abrir PR para `develop`.
+
+### Ajuste do health check e diagnóstico SMTP — 2026-10-19
+
+- **Objetivo e estado:** Evitar que credenciais SMTP inválidas tornem o health agregado da API indisponível quando aplicação e banco estão operacionais.
+- **Arquivos alterados:** `src/main/resources/application.properties`, `README.md` e este log.
+- **Comportamento:** Desativado o `MailHealthIndicator` agregado com `management.health.mail.enabled=false`. O envio SMTP continua obrigatório no cadastro e no provisionamento de usuários; falha do Gmail continua impedindo a criação da conta.
+- **Diagnóstico:** O log do usuário confirma que a aplicação iniciou em `8081`, conectou ao PostgreSQL 17.11 e validou a migração V1. A chamada ao health retornou 503 porque o Gmail rejeitou a autenticação SMTP (`535 BadCredentials`).
+- **Validação:** `mvnw test` com JDK Microsoft 21.0.12.1 passou: 1 teste existente (`contextLoads`), 0 falhas/erros. Uma tentativa de iniciar HTTP temporariamente na porta 18081 carregou contexto, banco e Flyway, mas Tomcat não abriu o seletor NIO devido a `SocketException: Invalid argument: connect` no ambiente. Portanto, o status HTTP após a mudança ainda precisa ser confirmado no PowerShell local após reiniciar.
+- **Limitações e riscos restantes:** A disponibilidade SMTP não aparece no health agregado; verificar o SMTP no fluxo de criação de conta. As credenciais inválidas precisam ser corrigidas antes de criar usuários ou provisionar o ADMIN.
+- **Próximo passo:** Reiniciar com Java 21 e validar `/actuator/health` na porta 8081. Configurar uma senha de app válida antes de testar criação de usuários.
+
+### Decisões de escopo do Catalog — 2026-10-20
+
+- **Objetivo e estado:** Consolidar o modelo revisado e as decisões para preparar a primeira implementação de Catalog. Nenhuma funcionalidade ou migração de Catalog foi criada nesta atualização.
+- **Arquivos alterados:** `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md`, `docs/modelo-de-dados.md` e este log.
+- **Comportamento/contrato planejado:** Benefício não tem nome/título e cada benefício pertence a um estabelecimento; um estabelecimento pode ter vários benefícios. A primeira versão não armazena nem retorna horários. Fachada aceita URL HTTPS opcional. Desativação será lógica, preservando referências e ocultando itens inativos das consultas normais. Categorias terão cor de paleta do projeto e chave Iconify; mobile baixa apenas ícones selecionados durante sincronização online e mantém cache local para uso offline.
+- **Decisões e divergências:** O plano/contrato anteriores ainda mencionavam horários, marcas e distância; foram alinhados para excluir horários e não antecipar marcas ou busca espacial. O conteúdo não especifica nulabilidade/limites de `publico`, `contact` e `discount`; P-007 permanece aberto apenas para esses detalhes. PostGIS permanece pendente, mas não bloqueia CRUD sem proximidade.
+- **Validações executadas e resultados:** Inspecionados estado Git limpo, POM, plano, registro, contrato, código e migrações. Nenhum teste foi criado ou executado e nenhuma compilação foi executada. A tentativa de criar branch falhou porque o ambiente negou escrita em `.git` (`Permission denied`); os arquivos de documentação estão editados na branch existente.
+- **Limitações e riscos restantes:** Ícones e imagens recém-adicionados só ficam disponíveis offline após o cliente sincronizar e armazenar cache enquanto estiver online. O cliente mobile não está neste repositório. Ainda é necessário fechar P-007 antes da migração de Benefit; valores concretos da paleta também precisam ser definidos no contrato/implementação.
+- **Próxima dependência/módulo:** Fechar limites/nulabilidade de Benefit e definir a paleta; depois implementar Catalog em branch de trabalho baseada em `develop`, sem horários, Brand ou busca espacial.
+
+### Catalog — primeira implementação — 2026-10-20
+
+- **Objetivo e estado:** Implementar o modelo inicial, administração e leitura autenticada do catálogo; código preparado e compilado, execução com PostgreSQL ainda não validada.
+- **Arquivos criados/alterados:** Classes JPA, repositórios, DTOs, serviço e controllers em `src/main/java/com/weg/benefits/catalog/`; `src/main/resources/db/migration/V2__catalog.sql`; handler comum de conflito HTTP; contrato, registro de decisões, modelo, plano e este log.
+- **Comportamento/rotas:** CRUD administrativo (GET paginado/detalhe, POST, PATCH e POST deactivation) para `/v1/admin/categories`, `/services`, `/establishments` e `/benefits`; leitura ativa em `/v1/categories`, `/v1/categories/options`, `/v1/services`, `/v1/establishments`, `/v1/establishments/{id}` e `/v1/establishments/{id}/benefits`. A configuração de segurança existente exige ADMIN para `/v1/admin/**` e sessão para as demais rotas. V2 cria Category, Service, Establishment, relação N:N e Benefit com desativação lógica e UUID.
+- **Decisões/divergências:** D-041 confirma todos os campos de Benefit obrigatórios. D-042 confirma UUID para as quatro entidades Catalog. `audience`, `contact` e `discount` usam TEXT porque seus limites máximos continuam sem decisão (P-007). Não foram incluídos horários, Brand, PostGIS ou busca por distância.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou. Nenhum teste foi adicionado ou executado. `mvnw.cmd spring-boot:run` foi tentado em 8081; a inicialização não conectou ao banco porque `localhost:5432` recusou a conexão. `docker compose ps` confirmou que o Docker Desktop engine não está acessível. A migração V2 não foi aplicada e endpoints não foram exercitados.
+- **Limitações/riscos:** Limites de público/contato/desconto seguem pendentes; valores da paleta de oito cores são a paleta inicial do projeto; runtime, Flyway V2 e autorização ainda precisam de verificação com PostgreSQL em execução. Commit `bca3426` foi criado na branch `codex/catalog-foundation` e publicado em `origin`; a PR para `develop` ainda não foi aberta porque o navegador estava sem sessão GitHub e o `gh` CLI não está instalado.
+- **Próxima etapa:** Iniciar Docker/PostgreSQL, executar API na porta 8081 e validar migração/health/endpoints sem executar testes automatizados; resolver P-007 antes de impor limites a Benefit; abrir a PR para `develop` após autenticar GitHub/conectar a integração.
+
+### Revisão do modelo de dados recebida — 2026-10-20
+
+- **Objetivo e estado:** Preservar e comparar a modelagem atualizada enviada pela equipe. Revisão documental concluída; alterações de esquema e comportamento aguardam reconciliação das divergências.
+- **Arquivos alterados:** Adicionado `docs/referencia/WEG-Benefits-Modelagem-revisada.pdf`; atualizados `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/README.md` e este log. Nenhum código, endpoint ou migração foi alterado.
+- **Modelo/contrato:** O PDF propõe IDs inteiros para entidades de Catalog, relação Establishment 1:1 Benefit, entidade Discount 1:N Benefit, seleção de ícones por opções do sistema, username só com letras minúsculas e Estado de 2–75 caracteres.
+- **Decisões e divergências:** P-017 a P-022 registram conflitos com decisões anteriores, contratos/validadores e V2. O estado aprovado e implementado foi preservado; V2 não foi editada. A cópia do PDF tem o mesmo SHA-256 da origem.
+- **Validações executadas:** Verificado que o PDF de origem estava acessível, extraído seu texto (6 páginas), inspecionados modelo, registro, contrato, código e migrações. Links relativos adicionados apontam para arquivos existentes. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** Não é seguro converter `UUID` em inteiros nem separar o texto de desconto em valor/descrição sem confirmar impacto na API/clientes e definir a preservação de dados existentes. Também faltam definições inequívocas para a cardinalidade e para as regras de username, ícones e estado.
+- **Próxima dependência/módulo:** Resolver P-017 a P-022 com a equipe; então especificar uma migração nova de reconciliação de Catalog e atualizar entidades, DTOs e contrato, preservando V2.
+
+### Decisões após revisão do modelo Catalog — 2026-10-20
+
+- **Objetivo e estado:** Registrar as respostas da equipe à modelagem atualizada. Decisões de produto consolidadas; código e banco ainda não reconciliados.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhuma classe ou migração foi alterada.
+- **Modelo/contrato:** IDs do catálogo continuam UUID; Establishment e Benefit têm relação 1:1; cada Benefit terá um ou mais Discounts. Iconify, username D-022 e UF como sigla permanecem.
+- **Decisões e pendências:** Registradas D-043 a D-046; P-017 a P-022 foram resolvidas. P-023 define se Establishment pode existir temporariamente sem Benefit, P-024 confirma obrigatoriedade de value/description, e P-025 verifica/preserva dados já gravados. A resposta ao item 3 foi interpretada como “pelo menos um Discount por Benefit”.
+- **Validações executadas:** Documentação revisada e diff verificado. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** V2 ainda permite múltiplos benefícios por estabelecimento e mantém `discount` como texto. Não alterá-la; criar migração nova após fechar o fluxo de criação e o mapeamento dos dados.
+- **Próxima dependência/módulo:** Confirmar P-023 a P-025; então atualizar Catalog com migração Flyway nova, entidades, DTOs e contrato.
+
+### Fluxo de Benefit/Discount — 2026-10-20
+
+- **Objetivo e estado:** Registrar como os usuários do desktop irão gerenciar benefícios, descontos e pré-requisitos para estabelecimento. Decisões de produto adicionadas; o desenho HTTP aguarda o protótipo.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento aprovado:** `Discount.value` (2–15) e `Discount.description` (10–300) são obrigatórios. Benefício e descontos são criados/editados na mesma tela; Establishment só pode ser criado quando Category, Benefit e Discount existirem.
+- **Decisões e pendências:** D-047/D-048 registram as decisões. P-023 aguarda o protótipo para definir DTOs/operação HTTP e limite transacional; P-025 continua exigindo uma estratégia que preserve dados já gravados.
+- **Validações executadas:** Revisão documental e `git diff --check`; nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** Não se deve implementar o fluxo de Catalog por suposição de payload ou de criação antes de analisar o protótipo. V2 não deve ser reescrita.
+- **Próxima dependência/módulo:** Receber o protótipo, fechar P-023 e verificar dados locais; depois criar migração nova e alinhar entidades, serviços, DTOs e contrato.
+
+### Revisão do protótipo de Benefit — 2026-10-20
+
+- **Objetivo e estado:** Registrar o fluxo visível nas telas de criação e edição de benefício. Fluxo de interface entendido; cardinalidade inversa ainda pendente.
+- **Arquivos alterados:** `AGENTS.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este log. Nenhum código ou migração foi alterado.
+- **Comportamento visível:** Benefício é criado/edita-se numa tela própria com um ou mais descontos; começa inativo, ativa na primeira associação a estabelecimento, e desativação manual permanece mesmo com vínculos. A criação do estabelecimento requer categoria e benefício/desconto existentes.
+- **Decisões e divergências:** Value/description obrigatórios confirmados (D-047); telas adicionam D-049. O rótulo plural “Estabelecimentos vinculados” sugere que um Benefit pode estar em múltiplos Establishments, mas P-026 registra a necessidade de confirmação contra a resposta anterior de relação 1:1.
+- **Validações executadas:** Inspeção visual das duas telas enviadas e revisão dos documentos. Nenhum teste ou compilação foi executado.
+- **Limitações/riscos restantes:** A direção da relação Benefit–Establishment determina FK, unicidade e payloads da API; não implementá-la até confirmar P-026. A consulta ao PostgreSQL local permanece indisponível neste ambiente.
+- **Próxima dependência/módulo:** Confirmar se Benefit pode ser reutilizado por vários Establishments; depois definir associação, atualizar Catalog e preparar migração nova com preservação de dados.
+
+### Catalog — benefício exclusivo e descontos estruturados — 2026-10-20
+
+- **Objetivo e estado:** Aplicar a decisão de que Benefit é exclusivo de um Establishment e implementar o fluxo Benefit/Discount aprovado. Código compilado; V3 ainda não foi aplicada e a etapa permanece parcial até validação no PostgreSQL.
+- **Arquivos criados/alterados:** Criado `src/main/java/com/weg/benefits/catalog/Discount.java` e `src/main/resources/db/migration/V3__benefit_discounts_and_exclusive_establishment.sql`. Alterados `Benefit.java`, `Establishment.java`, `BenefitRepository.java`, `CatalogDtos.java`, `CatalogService.java`, README, AGENTS, contrato, plano, registro de decisões, modelo de dados, índice de documentação, README de migrações e este log.
+- **Comportamento/rotas:** Sem novas rotas. `POST/PATCH /v1/admin/benefits` passa a receber a lista de descontos com `value` (2–15) e `description` (10–300), e Benefit começa inativo sem estabelecimento. `POST /v1/admin/establishments` passa a exigir `benefitId` e `categoryId`; o vínculo é exclusivo e ativa o benefício apenas no primeiro vínculo. PATCH de estabelecimento permite associar/trocar benefício; não permite reutilizar benefício vinculado a outro estabelecimento. V3 cria `benefit_discount`, adiciona `establishment.benefit_id` obrigatório e único, registra `first_linked_at` e remove o desconto textual antigo, sem editar V2.
+- **Decisões e divergências:** D-050/P-026 confirmam Benefit exclusivo de um estabelecimento; Benefit pode existir sem vínculo antes. A legenda plural “Estabelecimentos vinculados” no protótipo entra em conflito e deve ser ajustada no cliente. V3 falha com segurança se houver qualquer linha em `establishment` ou `benefit`; P-025 requer verificar e mapear dados antes da aplicação.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`). `git diff --check` passou. Não foram criados nem executados testes. A migração não foi aplicada e a API não foi iniciada; o conteúdo local do PostgreSQL, health e endpoints não foram verificados nesta etapa.
+- **Limitações/riscos:** Se o banco local já tiver estabelecimentos ou benefícios, a atualização falhará deliberadamente até haver mapeamento manual/revisado dos dados; não converter o desconto legado por inferência. A constraint da tabela garante que todo estabelecimento tenha um benefício exclusivo; a regra de ao menos um desconto por benefício é validada pela API. O cliente desktop deve alinhar a legenda plural à cardinalidade aprovada.
+- **Próxima dependência/módulo:** Verificar contagens do banco local, decidir como mapear dados se houver, aplicar V3 e validar manualmente na porta 8081 criação/edição de Benefit/Discount, associação exclusiva, ativação inicial e conflitos; depois seguir para Engagement.
+
+### Catalog — aplicação da migração V3 — 2026-10-21
+
+- **Objetivo e estado:** Conferir se havia dados legados antes da migração e aplicar o novo esquema Catalog no banco local.
+- **Arquivos alterados:** `docs/api-contract.md`, `docs/decision-register.md`, `docs/README.md` e este log.
+- **Comportamento/rotas/migrações:** O usuário executou `docker compose ps` e confirmou PostgreSQL healthy. As contagens pré-migração de `establishment` e `benefit` foram zero. Ao iniciar a API, Flyway validou três migrações, encontrou esquema v2 e aplicou V3 com sucesso; o esquema local avançou para v3. Não houve alteração de rotas neste trabalho.
+- **Decisões/divergências:** Nenhum mapeamento de dados foi necessário para o banco local. P-025 está resolvido para essa base; a proteção permanece para outras bases com dados. A V3 está aplicada, mas a API não completou o início HTTP neste ambiente.
+- **Comandos e resultados:** `docker compose ps` do usuário mostrou `weg-benefits-postgres` healthy. Consulta SQL do usuário retornou zero estabelecimentos e zero benefícios. `mvnw.cmd spring-boot:run` com Microsoft JDK 21.0.12.1 conectou ao PostgreSQL 17.11 e registrou `Successfully applied 1 migration ... now at version v3`. A inicialização avançou até o JPA; Tomcat falhou ao criar seu seletor NIO com `SocketException: Invalid argument: connect` ao tentar loopback. A primeira tentativa sem elevação foi bloqueada com `Permission denied: getsockopt`. Health HTTP e rotas Catalog não foram verificadas. Docker CLI não estava acessível ao processo de verificação posterior (`dockerDesktopLinuxEngine: Access denied`), então não foi feita consulta adicional de schema.
+- **Limitações/riscos:** O banco local está migrado, mas não se confirmou o status `/actuator/health` nem o comportamento HTTP. O erro de Tomcat parece restrição de loopback do ambiente de execução; o usuário precisa iniciar a API localmente na porta 8081 para validar o health e seguir os fluxos manuais.
+- **Próxima dependência/módulo:** Iniciar `.\mvnw.cmd spring-boot:run` localmente com Java 21 e confirmar `/actuator/health`; então validar CRUD de Benefit/Discount e associação exclusiva do Establishment, sem rodar testes automatizados.
+
+### Catalog — health confirmado após V3 — 2026-10-21
+
+- **Objetivo e estado:** Confirmar que a API local iniciou após configurar Maven para usar Java 21 e aplicar V3.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O usuário confirmou `UP` em `http://localhost:8081/actuator/health`; a API está acessível e responde ao health. V3 já havia sido aplicada pelo Flyway. Nenhuma rota de negócio foi exercitada.
+- **Decisões/divergências:** A falha anterior de inicialização do Maven era Java 8 no terminal, que não carrega o plugin do Spring Boot; com Java 21 a aplicação iniciou no ambiente do usuário.
+- **Comandos e resultados:** Resultado fornecido pelo usuário: `(Invoke-RestMethod http://localhost:8081/actuator/health).status` retornou `UP`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Health confirma aplicação/banco conforme configuração, mas não valida autenticação nem operações do Catalog.
+- **Próxima dependência/módulo:** Validar manualmente criação/edição de Benefit com descontos e associação exclusiva ao criar Establishment; depois seguir para Engagement.
+
+### Correção do modo CLI para provisionamento do primeiro ADMIN — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha relatada ao iniciar o provisionamento CLI sem servidor web. A alteração foi compilada; o provisionamento ainda precisa ser repetido pelo usuário.
+- **Arquivos alterados:** `src/main/java/com/weg/benefits/identity/IdentityService.java` e este diário.
+- **Comportamento:** `IdentityService` agora recebe o repositório de sessões por `ObjectProvider`, resolvendo-o somente nas operações que revogam sessões. O contexto CLI pode iniciar sem o bean de sessões HTTP; na aplicação web, atualização/desativação ainda exige o repositório e revoga as sessões correspondentes.
+- **Decisões/divergências:** A causa foi a ausência de `FindByIndexNameSessionRepository` quando `spring.main.web-application-type=none`. Nenhuma regra de Identity nem migração foi alterada.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests compile` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`). A primeira tentativa não iniciou o Maven porque um caminho incorreto de `JAVA_HOME` foi usado; repetida com o JDK existente, compilou. Nenhum teste foi criado ou executado; a inicialização CLI e SMTP ainda não foram repetidos.
+- **Limitações/riscos:** O usuário precisa repetir o comando CLI em terminal interativo com PostgreSQL e SMTP configurados para confirmar o provisionamento completo.
+- **Próxima etapa:** Reexecutar o provisionamento CLI e confirmar que ele solicita usuário/e-mail/senha antes de persistir o primeiro ADMIN.
+
+### Isolamento da configuração HTTP no modo CLI — 2026-10-21
+
+- **Objetivo e estado:** Corrigir a falha seguinte do provisionamento CLI, causada por componentes de autenticação HTTP carregados num contexto sem servidor web. Pacote compilado e inicialização manual validada até o prompt; nenhum ADMIN foi provisionado.
+- **Arquivos criados/alterados:** Criado `src/main/java/com/weg/benefits/config/PasswordEncodingConfiguration.java`; alterados `src/main/java/com/weg/benefits/config/WebSecurityConfiguration.java`, `src/main/java/com/weg/benefits/identity/AuthController.java` e este log.
+- **Comportamento:** Codificador de senha continua disponível no CLI. Configuração HTTP e `AuthController` só são carregados em aplicação Servlet. O CLI iniciou com PostgreSQL 17.11, validou três migrações, confirmou esquema v3 atualizado e alcançou os prompts de provisionamento; a execução foi interrompida antes da coleta completa e envio SMTP.
+- **Decisões/divergências:** A exceção relatada ocorreu porque `AuthenticationConfiguration` não existe em `web-application-type=none`. A primeira verificação de runtime foi bloqueada pelo sandbox ao abrir conexão local; repetida com acesso local, a inicialização alcançou o prompt. Nenhuma regra de negócio ou migração mudou.
+- **Comandos e resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1 passou (`BUILD SUCCESS`; testes ignorados). O comando do jar em modo CLI conectou ao banco e chegou a `Username do primeiro ADMIN:`. Foi interrompido antes da conclusão do provisionamento; nenhum teste foi criado ou executado.
+- **Limitações/riscos:** Ainda falta executar o fluxo completo interativamente com SMTP configurado para confirmar aceitação do Gmail e criação do primeiro ADMIN.
+- **Próxima etapa:** Reexecutar o comando do README em terminal interativo, inserir os dados do primeiro ADMIN e confirmar a mensagem de sucesso do SMTP; depois iniciar API na porta 8081 e verificar health/login.
+
+### Provisionamento do primeiro ADMIN confirmado — 2026-10-21
+
+- **Objetivo e estado:** Concluir a validação manual do provisionamento inicial após corrigir o modo CLI. O usuário confirmou que a conta ADMIN foi criada.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas/migrações:** O CLI conectou ao PostgreSQL 17.11 com esquema v3 atualizado, recebeu os dados interativamente e informou “Primeiro ADMIN provisionado e mensagem aceita pelo SMTP.” Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** A confirmação do usuário demonstra que o banco persistiu o primeiro ADMIN e que o Gmail aceitou o envio. Dados pessoais e senha não são reproduzidos neste registro.
+- **Comandos e resultados:** O usuário executou `mvnw.cmd -DskipTests package` com Java 21 (`BUILD SUCCESS`) e o JAR com `--app.cli.provision-admin=true --spring.main.web-application-type=none`; o resultado final informou sucesso. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Login pela API ainda não foi validado após o provisionamento.
+- **Próxima etapa:** Iniciar a API na porta 8081, confirmar `/actuator/health` e autenticar com o username ou e-mail do ADMIN recém-provisionado.
+
+### Login do primeiro ADMIN validado — 2026-10-21
+
+- **Objetivo e estado:** Validar manualmente health, login por username e recuperação do perfil autenticado após o provisionamento inicial.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário confirmou health `UP`; `POST /v1/auth/login` aceitou credenciais pelo username e estabeleceu sessão; `GET /v1/me` retornou o perfil com papel `ADMIN` e conta ativa. Nenhum endpoint ou migração foi alterado.
+- **Decisões/divergências:** Provisionamento e autenticação inicial estão validados manualmente neste banco local. E-mail e outros dados pessoais foram omitidos deste registro.
+- **Comandos e resultados:** Resultados fornecidos pelo usuário via PowerShell: health `UP`; login sem erro; `/v1/me` retornou `id: 1`, username `admin`, role `ADMIN` e `active: True`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** CRUD de usuários e catálogo ainda não foi exercitado nesta validação; isso não valida todos os fluxos de autorização.
+- **Próxima etapa:** Validar manualmente o CRUD administrativo do Catalog conforme a tela aprovada, começando por criar Benefit com descontos e depois Establishment vinculado; após isso, seguir para Engagement.
+
+### Fluxo principal do Catalog validado manualmente — 2026-10-23
+
+- **Objetivo e estado:** Validar pelo PowerShell a criação e leitura encadeada de Category, Service, Benefit/Discount e Establishment com sessão ADMIN. Fluxo principal validado no banco local.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** O usuário criou Category, Service e Benefit com desconto; vinculou o Benefit a um Establishment; consultou o benefício e a leitura pública autenticada. A resposta confirmou `Benefit.active = true`, `Benefit.establishmentId` igual ao ID do Establishment e um benefício retornado (`totalElements = 1`). Nenhuma rota ou migração foi alterada.
+- **Decisões/divergências:** O fluxo confirma a ativação no primeiro vínculo, a associação exclusiva refletida nas respostas e a visibilidade do benefício no estabelecimento ativo. Os registros de demonstração permanecem no banco local; IDs não foram copiados para este diário.
+- **Comandos e resultados:** Resultados informados pelo usuário após chamadas PowerShell autenticadas aos endpoints `/v1/admin/categories`, `/v1/admin/services`, `/v1/admin/benefits`, `/v1/admin/establishments`, `/v1/admin/benefits/{id}` e `/v1/establishments/{id}/benefits`. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Edição, desativação, tentativa de reutilizar Benefit e erros de validação/autorizações negativas ainda não foram exercitados manualmente.
+- **Próxima etapa:** Se necessário, validar esses casos restantes do Catalog sem apagar os registros de demonstração; depois iniciar a etapa Engagement (favoritos e visitas), respeitando decisões pendentes sobre idempotência.
+
+### Edição, exclusividade e desativação de Benefit validadas — 2026-10-23
+
+- **Objetivo e estado:** Completar validações manuais do Catalog para edição de Benefit/Establishment, exclusividade do vínculo e desativação/reativação de Benefit.
+- **Arquivos alterados:** Este diário de implementação.
+- **Comportamento/rotas:** PATCH de Benefit substituiu a lista de descontos por dois itens e atualizou condições; PATCH de Establishment alterou o nome. Nova criação usando Benefit já associado retornou HTTP 409. Desativar Benefit retornou `active = false` e a consulta pública retornou zero; após PATCH `active = true`, a consulta voltou a retornar um. Os dados de teste permanecem no banco, com benefício ativo.
+- **Decisões/divergências:** Exclusividade, substituição dos descontos, atualização parcial e visibilidade de benefício inativo foram confirmadas no banco local. Nenhuma regra, rota ou migração mudou.
+- **Comandos e resultados:** Validação manual do usuário via PowerShell nas rotas `PATCH /v1/admin/benefits/{id}`, `PATCH /v1/admin/establishments/{id}`, `POST /v1/admin/establishments` (conflito 409), `POST /v1/admin/benefits/{id}/deactivation` e `GET /v1/establishments/{id}/benefits`; reativação por PATCH confirmada com um benefício visível. Nenhum teste automatizado foi criado ou executado.
+- **Limitações/riscos:** Ainda não foram exercitados cenários de autorização negativa nem casos de validação de entrada inválida. A implementação/validação das visitas depende da etapa Engagement.
+- **Próxima etapa:** Catalog principal e suas operações de edição, exclusividade e desativação estão validados manualmente. Definir regras de Engagement e sincronização offline antes da implementação.
+
+### Decisões iniciais de Engagement — 2026-10-23
+
+- **Objetivo e estado:** Registrar as decisões de permanência mínima para visita e retenção offline; nenhuma funcionalidade de Engagement foi implementada.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** O cliente registra visita após 3 minutos no estabelecimento, enviando somente evento final; dados/ações offline podem permanecer no cliente sem prazo até a reconexão.
+- **Decisões e pendências:** D-051 a D-053 confirmadas: dados offline até reconexão, visita após 3 minutos, chave idempotente por estabelecimento + timestamp UTC e janela de duplicidade de 30 minutos. P-011 está fechada. P-012 foi fechada posteriormente por D-054, registrado abaixo.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; `git diff --check` sem erros de whitespace. Nenhum teste ou execução da API realizado, pois não houve alteração de código.
+- **Limitações e riscos:** Não há endpoints nem persistência de favoritos/visitas implementados nesta etapa.
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização offline acordadas.
+
+### Tratamento da fila offline após desativação — 2026-10-23
+
+- **Objetivo e estado:** Registrar a decisão aprovada para fechar P-012 antes de implementar a sincronização de Engagement.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/implementation-plan.md`, `docs/api-contract.md` e este diário.
+- **Comportamento/contrato planejado:** Se a conta estiver desativada na reconexão, a API recusa sincronização; o app informa o usuário e oferece apagar a fila. Operações pendentes não podem ser enviadas sob outra conta.
+- **Decisão:** D-054 confirmada; P-012 fechada. Nenhuma rota ou funcionalidade foi implementada nesta atualização documental.
+- **Comandos e resultados:** Leitura dos documentos e revisão do diff; sem build, testes ou execução da API por não haver alteração de código.
+- **Limitações/riscos:** Endpoints e fila offline de Engagement ainda não estão implementados. A exclusão da fila depende da ação do usuário no app.
+- **Próxima etapa:** Implementar favoritos, visitas e as regras de sincronização acordadas na etapa Engagement.
+
+### Engagement — implementação inicial — 2026-10-23
+
+- **Objetivo e estado:** Implementar favoritos e visitas pertencentes à conta autenticada. Código e migração V4 aplicados ao banco local; validação HTTP manual ainda está pendente.
+- **Arquivos criados/alterados:** Novas entidades, DTOs, repositórios, serviço e controller em `engagement`; `V4__engagement_favorites_and_visits.sql`; ajustes em `IdentityService`/`AppUserRepository` para serializar gravações por conta e validar conta ativa; métodos de consulta de estabelecimento em `CatalogService`; handler de erro, README, contrato, plano, README das migrações, package-info e este diário.
+- **Rotas/migração:** `GET/PUT/DELETE /v1/me/favorites`, `GET/POST /v1/me/visits`; V4 cria `user_favorite` e `user_visit`, com FKs, unicidade/idempotência e índices.
+- **Comportamento:** Proprietário é sempre derivado da sessão. Favoritar exige estabelecimento e categoria ativos; remover favorito é idempotente. Visita exige estabelecimento existente, guarda apenas `establishmentId`, `occurredAt` e `receivedAt` (sem coordenadas), permite eventos offline sem limite de atraso e trata uma visita do mesmo usuário/estabelecimento em 30 minutos como duplicata. Eventos de locais depois desativados são aceitos para acomodar filas offline. Conta inativa/sessão revogada não consegue gravar; o cliente deve oferecer apagar a fila e nunca a enviar sob outra conta.
+- **Decisões/divergências:** Seguidas D-051 a D-054. Resposta de novo evento é 201; duplicata/reenvio é 200; favoritos retornam 204 em PUT/DELETE. O módulo mobile não está neste repositório, portanto a notificação e a ação de apagar fila ainda precisam ser implementadas no cliente.
+- **Comandos/resultados:** `mvnw.cmd -DskipTests package` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`; fontes de teste compilaram, mas Surefire foi pulado e nenhum teste foi executado. `docker compose ps` mostrou PostgreSQL saudável. `spring-boot:run` conectou ao PostgreSQL 17.11, validou/aplicou V4 e inicializou Hibernate/repositórios, mas não pôde vincular a porta 8081 porque já estava ocupada; não encerrei o processo existente.
+- **Limitações/riscos restantes:** Falta inicializar a API desta build na porta 8081 e validar manualmente as cinco rotas, duplicidade e isolamento por usuário. O app mobile não está neste repositório; mensagem e limpeza da fila continuam a cargo do cliente. Nenhum teste automatizado foi adicionado ou executado.
+- **Próxima etapa:** Liberar a porta 8081 sem interromper processo alheio, iniciar esta build e validar favoritos, visitas, duplicidade, isolamento por usuário e acesso após desativação; depois integrar fila e aviso no app mobile.
+
+### Engagement — testes automatizados iniciais — 2026-10-23
+
+- **Objetivo e estado:** Substituir parte da validação manual do módulo Engagement por testes automatizados de serviço e controller. Suíte executada com sucesso.
+- **Arquivos criados/alterados:** `src/test/java/com/weg/benefits/engagement/EngagementServiceTests.java`, `src/test/java/com/weg/benefits/engagement/EngagementControllerTests.java` e este diário.
+- **Cobertura:** Proprietário de favoritos/visitas vem da conta autenticada; PUT de favorito não duplica; conta inativa não grava; visita nova persiste o proprietário, estabelecimento e horário do evento; evento repetido na janela de 30 minutos retorna o registro existente; controller responde `201` para novo evento e `200` para duplicata.
+- **Decisões/divergências:** Não houve mudança de comportamento da API, rotas ou migrações. São testes unitários com dependências simuladas mais o teste de contexto Spring já existente; eles não fazem chamadas HTTP reais nem validam as consultas JPA do módulo contra um banco isolado.
+- **Comandos e resultados:** `mvnw.cmd test` com Microsoft JDK 21.0.12.1: `BUILD SUCCESS`, 7 testes executados, 0 falhas, 0 erros, 0 ignorados. O teste de contexto conectou ao PostgreSQL de desenvolvimento, confirmou Flyway v4 atualizado e carregou o contexto Spring. `git diff --check` passou.
+- **Limitações/riscos:** Permanecem sem cobertura automatizada de integração HTTP/autorização Spring Security e de persistência real dos repositórios de Engagement. Os testes de serviço verificam as regras sem depender de estado do banco, SMTP ou app mobile.
+- **Próxima etapa:** Criar testes de integração isolados para endpoints e persistência de Engagement quando o projeto definir/instalar infraestrutura de banco de teste; os testes atuais permitem validar regressões das regras principais sem repetir os fluxos manualmente.
 
 ## Importante
 

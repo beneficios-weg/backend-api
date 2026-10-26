@@ -6,7 +6,9 @@
 
 - Prefixo `/v1`; JSON UTF-8; HTTPS em ambientes compartilhados.
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
-- IDs opacos; UUID é recomendado, decisão ainda pendente antes da primeira migração.
+- IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
+
+**Modelo Catalog implementado em código; V3 foi aplicada ao banco local em 2026-10-21:** Benefit é cadastrado com um ou mais Discounts na mesma tela e começa inativo. Depois, Establishment é criado com Category e Benefit existentes. Cada Establishment recebe exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; o benefício ativa no primeiro vínculo e permanece ativo/inativo conforme edição manual após isso (D-044 a D-050). A contagem anterior à aplicação confirmou zero linhas em Establishment e Benefit. Em outros bancos, V3 falha se essas tabelas tiverem dados, pois o campo textual antigo não pode ser convertido automaticamente em `value` e `description`.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -35,28 +37,45 @@ O ADMIN cadastrará a senha comum da conta; não haverá senha temporária, troc
 
 ## Leitura de catálogo — Catalog
 
+Implementado na etapa Catalog:
+
 - `GET /v1/categories`
-- `GET /v1/brands` se marcas/franquias forem aprovadas
-- `GET /v1/establishments?query=&categoryId=&brandId=&lat=&lon=&radiusM=&sort=&cursor=`
+- `GET /v1/services` (opções ativas usadas no catálogo)
+- `GET /v1/establishments?query=&categoryId=&serviceId=&page=&size=`
 - `GET /v1/establishments/{id}`
 - `GET /v1/establishments/{id}/benefits` se não estiverem incluídos no detalhe
 
-Sem coordenadas, busca por texto/categoria ainda funciona e distância vem ausente. Ordenação por proximidade exige coordenadas válidas. Lista deve limitar resultados e não depender de serviço de mapas externo.
+O catálogo requer sessão autenticada. Listas aceitam `page` e `size`; consultas administrativas têm máximo de 100 itens por página e a busca pública de estabelecimentos limita a 50. `GET /v1/categories/options` retorna a paleta de cores permitida e indica Iconify como fonte de busca de ícones.
+
+Estabelecimentos, categorias, benefícios e serviços inativos não aparecem nas consultas normais. Benefícios são retornados sem nome/título e vinculados a um único estabelecimento. Ícones de categoria são identificadores Iconify; o cliente mobile baixa somente ícones usados ainda ausentes durante sincronização online e mantém cópia local para uso offline. A URL HTTPS opcional da fachada pode ser armazenada em cache pelo cliente. Não há horários, rota de marcas ou consulta de proximidade nesta versão. Busca espacial depende da decisão sobre PostGIS (P-006).
 
 ## Administração de catálogo — Catalog/Admin
+
+Implementado para ADMIN, com paginação, criação, edição parcial e desativação lógica:
 
 Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 - `/v1/admin/categories`
-- `/v1/admin/brands`
+- `/v1/admin/services`
 - `/v1/admin/establishments`
 - `/v1/admin/benefits`
-- `/v1/admin/opening-hours`
-- `/v1/admin/products-services`
 
-Cada família terá consulta/listagem, criação, edição parcial e arquivamento. O desenho final de sub-recursos, campos e métodos HTTP depende do modelo aprovado. Evitar exclusão física de dados referenciados.
+As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
+
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit não tem mais o texto `discount`: exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. `BenefitResponse.establishmentId` é `null` até o vínculo; `EstablishmentResponse.benefitId` identifica o benefício exclusivo.
+
+Exemplo do fluxo administrativo:
+
+1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact`, `conditions` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
+2. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
+3. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
+4. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+
+`V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 
 ## Ações pessoais — Engagement
+
+Implementadas nesta etapa; todas pertencem à conta autenticada, inclusive para ADMIN:
 
 - `GET /v1/me/favorites`
 - `PUT /v1/me/favorites/{establishmentId}` — adicionar de forma idempotente
@@ -64,7 +83,15 @@ Cada família terá consulta/listagem, criação, edição parcial e arquivament
 - `GET /v1/me/visits` — histórico paginado da conta autenticada
 - `POST /v1/me/visits` — visita final confirmada, com chave de idempotência aprovada
 
-O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Visitas repetidas em dias diferentes devem ser permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
+Listas aceitam `page` e `size`; o tamanho é limitado a 100. A resposta de favoritos contém `establishmentId`, nome, cidade, UF, nome/ícone/cor da categoria e `favoritedAt`; estabelecimentos ou categorias inativos não aparecem. A resposta do histórico contém `id`, `establishmentId`, `occurredAt` e `receivedAt`, sem coordenadas.
+
+`PUT` e `DELETE` de favoritos são idempotentes e retornam `204`. `POST /v1/me/visits` recebe `establishmentId` e `occurredAt` (ISO 8601 com offset; armazenado como instante UTC). Uma visita nova retorna `201`; reenvio/duplicata retorna `200` com o evento já persistido. A chave é a combinação do proprietário autenticado, estabelecimento e instante do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é tratada como duplicata. Não há prazo máximo para atraso offline.
+
+O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Apenas estabelecimentos existentes podem receber eventos de visita; eventos podem ser aceitos mesmo após desativação do estabelecimento para acomodar sincronização offline. Visitas repetidas fora da janela de 30 minutos são permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
+
+O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). Se uma sessão tiver sido revogada por desativação da conta, a API retorna `401`; o app informa que a sessão/conta não está disponível, não sincroniza e oferece apagar a fila local. Não enviar operações pendentes sob outra conta (D-054). A API não diferencia uma conta desativada de uma sessão inválida na resposta de autenticação.
+
+O cliente registra uma visita após o usuário permanecer 3 minutos no estabelecimento e envia à API somente o evento final; a API não recebe trilha GPS (D-008/D-052). Reenvios usam chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é duplicada e não cria novo registro (D-053).
 
 ## Autorização proposta
 

@@ -1,6 +1,6 @@
 # Plano de implementação — API WEG Benefits
 
-**Estado:** plano de referência; módulos de negócio ainda não estão confirmados como implementados.
+**Estado:** plano de referência; consulte `implementation-log.md` para a entrega real e suas validações.
 **Base conhecida:** Java 21, Spring Boot 4.1.1, Maven, PostgreSQL 17 local, Flyway, Spring Security, Actuator e Springdoc OpenAPI. Revalidar no projeto antes de executar cada etapa.
 
 ## 1. Objetivo e fronteiras
@@ -23,7 +23,7 @@ Começar como **monólito modular**: uma aplicação Spring Boot, uma implantaç
 | `config` | configuração por ambiente, segurança HTTP, CORS e beans transversais |
 | `common` | erros HTTP, validações compartilhadas estritamente necessárias, request ID e logging técnico |
 | `identity` | contas, credenciais, papéis, login, tokens e operações administrativas de usuários |
-| `catalog` | categorias, marcas/franquias, unidades, benefícios, horários, produtos/serviços, administração e consultas |
+| `catalog` | categorias, unidades, benefícios e serviços, administração e consultas |
 | `engagement` | favoritos e visitas associadas à conta autenticada |
 | `audit` (a criar quando necessário) | trilha de ações administrativas e retenção/auditoria |
 
@@ -32,7 +32,7 @@ Evitar classes ou subcamadas vazias. Cada módulo deve encapsular seus casos de 
 ### Persistência e localização
 
 - PostgreSQL é a fonte de verdade; Flyway versiona o esquema.
-- IDs devem ser opacos para os clientes. Para usuários, o ID inteiro único é gerado pelo banco. UUID continua como recomendação para outras entidades, sujeito à confirmação antes da primeira migração de negócio.
+- IDs devem ser opacos para os clientes. Para usuários, o ID inteiro único é gerado pelo banco. Category, Service, Establishment e Benefit usam UUID (D-042).
 - Recomenda-se PostGIS para filtro/ordenação por proximidade quando a equipe fechar o ambiente de desenvolvimento e entrega. A decisão deve anteceder o módulo de busca espacial.
 - Endereços, coordenadas de estabelecimentos e raio de visita são dados do catálogo; coordenadas de usuários não devem ser guardadas continuamente.
 - Arquivar/inativar registros do catálogo em vez de exclusão física quando houver referências históricas.
@@ -42,7 +42,7 @@ Evitar classes ou subcamadas vazias. Cada módulo deve encapsular seus casos de 
 - Prefixo versionado `/v1`, HTTPS fora do ambiente local e payloads JSON.
 - Autorização verificada no servidor para cada rota; ocultar botões no desktop não protege endpoints.
 - Erros uniformes, validação server-side, limites de paginação e busca, request ID e logs sem segredos/PII desnecessária.
-- Datas de eventos em UTC/ISO 8601; horários de funcionamento calculados no fuso da unidade.
+- Datas de eventos em UTC/ISO 8601. Horários de funcionamento não fazem parte da primeira versão da API (D-037).
 - Escritas repetíveis após offline devem ser idempotentes quando a operação puder ser enfileirada.
 - OpenAPI é publicado como contrato; mudança de comportamento exige atualização do contrato e coordenação com os repositórios clientes.
 - Configurações e segredos vêm do ambiente/secret store; credenciais locais de Compose são exclusivas de desenvolvimento.
@@ -73,17 +73,17 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 **Ainda necessário para concluir a etapa:** configurar os segredos OAuth e validar o envio real pela Gmail API; executar fluxo manual com PostgreSQL (CLI, login, autorização, criação e desativação); documentar resultados reais. Nenhum desses itens foi validado neste trabalho.
 
-### Etapa 2 — Catalog: modelo e administração
+### Etapa 2 — Catalog: modelo e administração (em implementação)
 
-**Entidades candidatas:** Category, Brand, Establishment, Benefit, OpeningHour, ProductService. Revisar documentos originais e modelo existente antes de consolidar campos, tamanho e obrigatoriedade. Horários precisam suportar dias fechados e faixas que atravessam a meia-noite se o requisito pedir.
+**Entidades da primeira versão:** Category, Establishment, Benefit, Discount e Service, conforme a modelagem reconciliada. Brand fica fora até aprovação de uma necessidade do MVP. Benefit não terá nome/título; cada Establishment criado exige um Benefit exclusivo, que pode ser cadastrado sem vínculo antes da associação. Benefit possui um ou mais Discounts (D-044/D-045/D-050). Horários ficam fora da API (D-037). V3 reconcilia a relação e o desconto textual sem reescrever V2, e interrompe se encontrar Establishment ou Benefit preexistentes.
 
-**Escopo:** migrações Flyway, constraints, validação, DTOs, consultas administrativas paginadas e rotas de criação/edição/arquivamento protegidas. Operações relacionadas devem ser transacionais. Auditoria mínima registra ator, ação, entidade, data/hora e request ID, sem guardar segredos ou payload sensível completo.
+**Escopo:** migrações Flyway, constraints, validação, DTOs, consultas administrativas paginadas e rotas de criação/edição/desativação protegidas. Desativação é lógica e preserva linhas e relações. Categoria usa cor de paleta definida pelo projeto e identificador Iconify; o cliente mobile sincroniza somente os ícones escolhidos e os mantém em cache para operação offline (D-039/D-040). A fachada aceita URL HTTPS opcional, sem upload de mídia nesta versão (D-038). Operações relacionadas são transacionais. Benefit e Discounts são mantidos juntos no payload da tela; o benefício começa inativo e ativa no primeiro vínculo (D-047 a D-050). P-025 exige verificar dados antes de aplicar V3; a migração falha com mensagem segura se houver estabelecimentos ou benefícios existentes.
 
-**Concluído quando:** ADMIN administra entidades aprovadas via API; COLLABORATOR recebe 403 em escrita administrativa; arquivamento preserva histórico e integridade referencial.
+**Concluído quando:** ADMIN administra entidades aprovadas via API; COLLABORATOR recebe 403 em escrita administrativa; desativação preserva integridade referencial e itens inativos não aparecem nas consultas normais.
 
 ### Etapa 3 — Catalog: leitura e descoberta mobile
 
-**Escopo:** categorias, marcas, listagem e detalhe de estabelecimento; benefícios, serviços e horários; busca por texto; filtros; paginação/limites; ordenação por nome e distância. `distance`, `isOpen` e `isFavorite` são valores calculados, não campos persistidos duplicados.
+**Escopo:** categorias, listagem e detalhe de estabelecimento; benefícios e serviços; busca por texto; filtros; paginação/limites; ordenação por nome. `distance` e `isFavorite` são valores calculados, não campos persistidos duplicados. Não haverá horários nem `isOpen` nesta versão (D-037).
 
 **Busca espacial:** após aprovar PostGIS, filtrar/ordenar no banco e definir SRID/unidade, índice e raio. Sem coordenadas, busca textual/categoria continua disponível e distância é ausente. A API não deve depender de serviço externo de mapas para devolver resultados.
 
@@ -91,11 +91,11 @@ ADMIN pode promover COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN 
 
 ### Etapa 4 — Engagement: favoritos, visitas e operação offline
 
-**Escopo:** favoritos próprios, histórico de visitas próprio e gravação de visita confirmada enviada pelo mobile. IDs de proprietário sempre derivam da sessão. Favoritar deve ser idempotente; visitas podem ocorrer em dias diferentes e usam chave de idempotência para reenvio.
+**Escopo:** favoritos próprios, histórico de visitas próprio e gravação de visita confirmada enviada pelo mobile. IDs de proprietário sempre derivam da sessão. Favoritar deve ser idempotente; o cliente registra visita após 3 minutos no estabelecimento e usa chave idempotente estável por estabelecimento + timestamp UTC. Visitas do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos são tratadas como duplicatas (D-052/D-053).
 
-**Contrato de visita:** definir campos mínimos, relógio/event timestamp e política para visita duplicada próxima no tempo. Receber apenas visita final e prova mínima aprovada; não receber trajetória GPS completa. O mobile mantém cache e fila offline. A API aceita o reenvio e reporta resultado inequívoco.
+**Contrato de visita:** o cliente registra a visita após o usuário permanecer 3 minutos no estabelecimento (D-052). A API recebe apenas o evento final, sem trajetória GPS; eventos usam chave idempotente estável por estabelecimento + timestamp UTC e duplicatas do mesmo usuário/estabelecimento em 30 minutos não criam nova visita (D-053). O cliente mantém dados offline sem prazo até a reconexão (D-051). Se a conta estiver desativada, a API recusa a sincronização, o app informa o usuário e oferece apagar a fila; nunca reatribuir operações a outra conta (D-054). A API aceita reenvio e reporta resultado inequívoco.
 
-**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas.
+**Concluído quando:** conta nunca lê/modifica ações de outra; reenvio não duplica; desativação da conta impede novas gravações autenticadas; eventos não contêm GPS bruto.
 
 ### Etapa 5 — Integração, operação e release
 

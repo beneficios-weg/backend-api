@@ -26,6 +26,11 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 - Favoritos e visitas são dados pessoais do colaborador e não concedem acesso a dados de outras contas.
 - A localização em segundo plano é detectada pelo cliente mobile e seus módulos nativos. A API recebe o evento de visita final e não mantém trilhas contínuas de GPS.
 - O app cliente mantém cache e fila offline. A API deve aceitar reenvio idempotente das operações aprovadas.
+- Dados e operações mantidos offline pelo cliente podem permanecer sem prazo de expiração até a reconexão (D-051). Se a conta estiver desativada na sincronização, a API recusa as operações; o app informa a desativação e oferece apagar a fila local. Operações pendentes nunca são enviadas sob outra conta (D-054).
+- O cliente registra uma visita depois que o usuário permanecer 3 minutos no estabelecimento; a API recebe apenas o evento final, sem trilha GPS (D-008/D-052). Reenvios usam chave estável por estabelecimento e timestamp UTC; duplicatas do mesmo usuário/estabelecimento dentro de 30 minutos não criam outra visita (D-053).
+- Em pedidos de sincronização com sessão revogada, a API responde `401`; a resposta não revela se a causa foi desativação ou sessão inválida. O cliente deve informar que a sessão/conta não está disponível, não reenviar sob outra conta e oferecer apagar a fila (D-054).
+
+**Decisões do modelo Catalog — revisão de 2026-10-20:** Category, Service, Establishment, Benefit e Discount usam UUID. Cada Establishment exige exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; Benefit pode ser criado sem vínculo para permitir o fluxo da tela administrativa. Cada Benefit exige pelo menos um Discount, com `value` obrigatório (2–15 caracteres) e `description` obrigatório (10–300). Benefício começa inativo e ativa ao primeiro vínculo; desativação manual permanece. A legenda plural “Estabelecimentos vinculados” do protótipo conflita com a decisão de exclusividade e deve ser ajustada no cliente. Establishment exige Category ativa e Benefit existente com desconto. Permanecem Iconify, username D-022 e Estado como sigla UF. A migração nova V3 interrompe com segurança se existirem linhas em Establishment ou Benefit; não editar V2 nem descartar dados.
 
 ## Regras de implementação
 
@@ -33,6 +38,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 
 - Implemente somente a etapa/módulo solicitado; não antecipe os demais.
 - Inspecione o estado do Git, o POM, os arquivos, migrações e dependências antes de editar.
+- Por padrão, crie branches de trabalho a partir de `develop` e abra pull requests com destino a `develop`; só use outro destino quando o usuário solicitar.
+- Ao iniciar a API localmente, use a porta `8081` (configurável por `SERVER_PORT`).
 - Quando uma alteração coerente estiver concluída e revisada, faça um commit se o projeto estiver em Git e o commit for apropriado; preserve mudanças alheias/incompletas e informe o hash. Não crie commits se não houver repositório Git.
 - Preserve alterações locais e migrações aplicadas. Nunca reescreva uma migração já aplicada.
 - Use DTOs na fronteira HTTP; não exponha entidades JPA.

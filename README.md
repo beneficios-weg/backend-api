@@ -91,6 +91,11 @@ complete verification for the sensitive `gmail.send` scope.
 Production CORS origins must be explicit;
 wildcard origins are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared
 or production environment.
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`,
+`MAIL_APP_PASSWORD`, and `MAIL_FROM` can be configured per environment. The API defaults to port
+`8081`; set `SERVER_PORT` to override it. Production CORS origins must be explicit; wildcard origins
+are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared or production
+environment.
 
 Provision the first ADMIN from an interactive PowerShell terminal after the database and Gmail API
 OAuth configuration are ready. The password is read without echo and is not passed as an argument:
@@ -110,14 +115,21 @@ Only Actuator health is exposed. Health responses do not include component detai
 are not checked by the health endpoint. Flyway creates
 the Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement
 tables exist yet.
+Only Actuator health is exposed. Health responses do not include component details, and the aggregate
+health check covers the application/database rather than SMTP. SMTP is required for account creation;
+invalid Gmail credentials make that operation fail even when API health is `UP`. Flyway V1 creates the
+Identity user and PostgreSQL-backed Spring Session tables; V2/V3 define Catalog; V4 defines favorites
+and visits. V3 aborts startup if
+the database already contains rows in `establishment` or `benefit`; inspect and map those records before
+starting the updated API against a database with Catalog data.
 
 ## Initial package boundaries
 
 - `com.weg.benefits.catalog`: catalog administration and its use cases.
 - `com.weg.benefits.identity`: account, session authentication, initial ADMIN CLI and user administration.
-- `com.weg.benefits.engagement`: favorites and visits, when those features are designed.
+- `com.weg.benefits.engagement`: authenticated user's favorites and visits.
 - `com.weg.benefits.common`: cross-cutting HTTP and logging infrastructure.
 - `com.weg.benefits.config`: application configuration.
 
-There is no public account registration, password reset, catalog, favorites or visits. Identity routes
-and their current scope are listed in [docs/api-contract.md](docs/api-contract.md).
+There is no public account registration or password reset. Catalog, Identity and Engagement routes,
+including which are implemented, are listed in [docs/api-contract.md](docs/api-contract.md).
