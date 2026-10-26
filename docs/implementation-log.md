@@ -397,3 +397,33 @@ Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justifica
 - **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V5 no banco nesta etapa.
 - **Limitações/riscos:** Ao aplicar V5 em qualquer ambiente, Flyway arquivará os textos de condições já existentes. Clientes antigos que enviem `conditions` precisam atualizar seus JSONs; esse campo já não integra o contrato novo.
 - **Próxima etapa:** Commitar e enviar a migração/remoção na branch da PR para `develop`; integrar a PR antes do redeploy para que Flyway aplique V5 no startup.
+
+### Compartilhamento de Benefit entre estabelecimentos — 2026-10-26
+
+- **Objetivo e estado:** Reverter a exclusividade de Benefit aprovada anteriormente. Cada Establishment continua exigindo um Benefit, e um Benefit pode ser usado por vários Establishments (D-057).
+- **Arquivos criados/alterados:** `AGENTS.md`, `Benefit.java`, `Establishment.java`, `BenefitRepository.java`, `CatalogDtos.java`, `CatalogService.java`, `V6__allow_shared_benefits.sql`, README da raiz das migrações e documentos ativos de modelo/contrato/decisões.
+- **Comportamento e contrato:** O vínculo JPA passa a ser `Establishment ManyToOne Benefit`; a validação que impedia compartilhar um Benefit foi removida. `BenefitResponse.establishmentId` é substituído por `establishmentCount`. V6 troca o índice único do FK por índice comum e preserva os vínculos já gravados.
+- **Decisões/divergências:** D-057 substitui D-050 quanto à exclusividade. Cada Establishment continua tendo exatamente um benefício. Clientes que leem `BenefitResponse.establishmentId` devem migrar para `establishmentCount`; `EstablishmentResponse.benefitId` permanece igual.
+- **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V6 ao banco nesta etapa.
+- **Limitações/riscos:** V6 precisa ser aplicada depois de V5 no próximo deploy; nenhuma migração foi aplicada ao Neon/local nesta alteração.
+- **Próxima etapa:** Integrar a PR #52 em `develop`; no redeploy, Flyway aplicará V6 após V5. Atualizar clientes que esperavam `BenefitResponse.establishmentId` para ler `establishmentCount` antes de depender da contagem de vínculos.
+
+### Criação em lote para todo o Catalog — 2026-10-26
+
+- **Objetivo e estado:** Permitir cadastrar em uma requisição vários registros de cada entidade do catálogo. Adicionados endpoints batch para Category, Service e Establishment; o de Benefit já existia.
+- **Arquivos criados/alterados:** `CatalogDtos.java`, `CatalogAdminController.java`, `CatalogService.java`, `docs/http-api.md`, `docs/api-contract.md`, `docs/README.md`, `docs/implementation-plan.md`, `docs/decision-register.md`, `README.md` e este diário.
+- **Comportamento e rotas:** `POST /v1/admin/categories/batch`, `POST /v1/admin/services/batch`, `POST /v1/admin/establishments/batch` e o existente `POST /v1/admin/benefits/batch` aceitam 1–100 itens, retornam `201` com a lista na ordem enviada e são atômicos por lote. Cada item mantém as validações da rota individual. Serviços repetidos no mesmo lote, sem distinção de maiúsculas/minúsculas, são rejeitados. Os lotes são separados por recurso; Establishment requer Category ativa e Benefit existente.
+- **Decisões/divergências:** D-058 registra endpoints separados por entidade, limite máximo 100 e atomicidade individual. Não foi criada operação de importação multi-entidade em uma única transação.
+- **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem chamada HTTP manual.
+- **Limitações/riscos:** Lotes não usam chave de idempotência; após timeout, consultar a listagem antes de repetir. Cadastro em lote de Establishments depende de Categories e Benefits já cadastrados.
+- **Próxima etapa:** Revisar e integrar a PR que contém as rotas; depois do deploy, enviar manualmente lotes pequenos via Swagger em `http://localhost:8081/swagger-ui.html` ou na URL da demonstração.
+
+### Relatório de integração API–Mobile, Geoapify e localização — 2026-10-26
+
+- **Objetivo e estado:** Avaliar Geoapify e registrar um guia portátil para integrar o Mobile ao contrato vigente da API e à localização do dispositivo. Geoapify é recomendada para geocodificação revisada dos endereços do catálogo; integração de código ainda não foi implementada nem aprovada como dependência de produção.
+- **Arquivos criados/alterados:** `docs/relatorio-integracao-mobile-localizacao.md`, `docs/README.md` e este diário.
+- **Comportamento/rotas/migrações:** Nenhuma mudança no código, contrato, rotas ou migrações. O relatório documenta catálogo/paginação, sessão por cookie, favoritos/visitas, cache e fila offline, modelo de mapa informado pela equipe e fronteira de localização nativa.
+- **Decisões/divergências:** Geoapify Forward Geocoding é adequada para enriquecer endereços e manter coordenadas aprovadas no catálogo. Recomenda-se começar com revisão manual de JSON/cadastro, mantendo a chave fora do app e sem chamadas de localização pessoal. Não foram escolhidos tiles ou provedor de rotas. Permanecem pendentes validação do runtime Mobile, detalhes de geofence/tolerância, compatibilidade de cookie WebView, política offline de tiles e atribuições visuais. Os documentos Mobile herdados contêm status antigos; o relatório aponta as decisões atuais em `AGENTS.md`, contrato e log.
+- **Comandos/resultados:** Revisados documentos de produto, API, sessão, DTOs, migrações e rotas; consultadas fontes oficiais Geoapify, Android e Apple. `git diff --check` e verificação de links relativos executados após a edição. Nenhum teste, build, API ou deploy executado, pois só houve documentação.
+- **Limitações/riscos:** Cotas, termos, versões e limitações dos sistemas operacionais mudam; conferir os links oficiais antes de integrar. O Mobile não está neste workspace, então sua arquitetura e permissões precisam ser verificadas no repositório Mobile da outra máquina. Nenhuma dependência Geoapify foi adicionada.
+- **Próxima etapa:** Na máquina com o Mobile, confirmar runtime e autenticação por cookie; depois implementar o cliente HTTP e sincronização de catálogo, seguida de localização nativa e validação real da regra de visita de três minutos.

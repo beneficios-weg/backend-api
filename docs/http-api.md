@@ -79,18 +79,50 @@ Paginação começa em `page=0`; `size` padrão é `20`. A listagem administrati
 
 Todas as rotas desta seção exigem papel `ADMIN`. As listas administrativas usam `page=0` e `size=20` por padrão, com tamanho máximo de 100. As rotas de desativação preservam o registro e suas relações.
 
-| Recurso | Listar | Consultar por ID | Criar | Editar | Desativar |
-|---|---|---|---|---|---|
-| Categorias | `GET /v1/admin/categories` | `GET /v1/admin/categories/{id}` | `POST /v1/admin/categories` | `PATCH /v1/admin/categories/{id}` | `POST /v1/admin/categories/{id}/deactivation` |
-| Serviços | `GET /v1/admin/services` | `GET /v1/admin/services/{id}` | `POST /v1/admin/services` | `PATCH /v1/admin/services/{id}` | `POST /v1/admin/services/{id}/deactivation` |
-| Estabelecimentos | `GET /v1/admin/establishments` | `GET /v1/admin/establishments/{id}` | `POST /v1/admin/establishments` | `PATCH /v1/admin/establishments/{id}` | `POST /v1/admin/establishments/{id}/deactivation` |
-| Benefícios | `GET /v1/admin/benefits` | `GET /v1/admin/benefits/{id}` | `POST /v1/admin/benefits` | `PATCH /v1/admin/benefits/{id}` | `POST /v1/admin/benefits/{id}/deactivation` |
+| Recurso | Listar | Consultar por ID | Criar | Criar em lote | Editar | Desativar |
+|---|---|---|---|---|---|---|
+| Categorias | `GET /v1/admin/categories` | `GET /v1/admin/categories/{id}` | `POST /v1/admin/categories` | `POST /v1/admin/categories/batch` | `PATCH /v1/admin/categories/{id}` | `POST /v1/admin/categories/{id}/deactivation` |
+| Serviços | `GET /v1/admin/services` | `GET /v1/admin/services/{id}` | `POST /v1/admin/services` | `POST /v1/admin/services/batch` | `PATCH /v1/admin/services/{id}` | `POST /v1/admin/services/{id}/deactivation` |
+| Estabelecimentos | `GET /v1/admin/establishments` | `GET /v1/admin/establishments/{id}` | `POST /v1/admin/establishments` | `POST /v1/admin/establishments/batch` | `PATCH /v1/admin/establishments/{id}` | `POST /v1/admin/establishments/{id}/deactivation` |
+| Benefícios | `GET /v1/admin/benefits` | `GET /v1/admin/benefits/{id}` | `POST /v1/admin/benefits` | `POST /v1/admin/benefits/batch` | `PATCH /v1/admin/benefits/{id}` | `POST /v1/admin/benefits/{id}/deactivation` |
 
 Criações individuais retornam `201 Created` com o objeto criado; atualizações retornam `200`; desativações retornam `204`. IDs do catálogo são UUID. Em `PATCH`, envie somente os campos que deseja alterar.
+
+### Criar vários itens do catálogo de uma vez
+
+Cada endpoint `/batch` recebe um objeto com uma lista chamada conforme o recurso (`categories`, `services`, `establishments` ou `benefits`). Cada lista aceita de 1 a 100 objetos e cada objeto usa o mesmo formato e validações da rota de criação individual. A resposta é `201 Created` com uma lista na mesma ordem. O lote é atômico: se qualquer item falhar na validação, nas regras de negócio ou ao salvar, nenhum item daquele lote é mantido.
+
+Exemplo de categorias:
+
+```json
+{
+  "categories": [
+    { "name": "Alimentação", "iconKey": "mdi:food", "colorHex": "#E65100" },
+    { "name": "Mobilidade", "iconKey": "mdi:car", "colorHex": "#0D47A1" }
+  ]
+}
+```
+
+Exemplo de serviços:
+
+```json
+{
+  "services": [
+    { "name": "Estacionamento" },
+    { "name": "Delivery" }
+  ]
+}
+```
+
+Para estabelecimentos, envie os objetos completos descritos na seção abaixo dentro de `establishments`. Cada um precisa referenciar uma categoria ativa e um benefício existente com pelo menos um desconto. Portanto, cadastre categorias e benefícios antes de enviar o lote de estabelecimentos; o mesmo benefício pode ser compartilhado. Os lotes são separados por recurso e não formam uma transação única entre endpoints.
+
+Os lotes de benefícios continuam aceitando `benefits` e também criam seus descontos. Todos os endpoints `/batch` compartilham o limite de 100 itens. Em timeout sem resposta, consulte a lista administrativa antes de repetir, pois esses endpoints não usam chave de idempotência.
 
 ### Criar um benefício
 
 `POST /v1/admin/benefits` cadastra um benefício e seus descontos; não associa estabelecimento. Ele começa inativo e pode ser associado depois ao criar ou editar um estabelecimento.
+
+O mesmo benefício pode ser usado em vários estabelecimentos. Edições ou desativações feitas no benefício compartilhado se aplicam a todos os estabelecimentos associados.
 
 ```json
 {
@@ -145,7 +177,7 @@ Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracter
 }
 ```
 
-Sucesso: `201 Created`, com um array de respostas na mesma ordem dos itens enviados. Cada benefício terá UUID, `active: false` e `establishmentId: null` até ser associado.
+Sucesso: `201 Created`, com um array de respostas na mesma ordem dos itens enviados. Cada benefício terá UUID, `active: false` e `establishmentCount: 0` até ser associado. As respostas dos endpoints administrativos de benefício informam `establishmentCount`, a quantidade de estabelecimentos associados.
 
 O lote é atômico: se qualquer item estiver inválido ou ocorrer erro ao salvar, a transação inteira é revertida e nenhum benefício do lote é mantido. A rota cria benefícios e descontos; ela **não** cria estabelecimentos nem categorias, não associa benefícios e não envia e-mail. O campo `conditions` não faz parte do contrato. Em erro, corrija o lote inteiro antes de reenviar. Após um timeout sem resposta, consulte `GET /v1/admin/benefits` para confirmar se o servidor concluiu a chamada antes de repeti-la; o endpoint não usa chave de idempotência.
 
@@ -189,7 +221,7 @@ Exemplo de `POST /v1/admin/establishments`:
 }
 ```
 
-Para criar estabelecimento, categoria ativa e benefício existente são obrigatórios; o benefício deve ter desconto e não pode estar vinculado a outro estabelecimento. `serviceIds` pode ser uma lista vazia. `facadeImageUrl` HTTPS e `altitude` são opcionais. O estado é a sigla de duas letras.
+Para criar estabelecimento, categoria ativa e benefício existente são obrigatórios; o benefício deve ter desconto e pode já estar associado a outros estabelecimentos. Cada estabelecimento mantém apenas um benefício, e o mesmo benefício pode ser compartilhado. `serviceIds` pode ser uma lista vazia. `facadeImageUrl` HTTPS e `altitude` são opcionais. O estado é a sigla de duas letras.
 
 ## Usuários: administração
 

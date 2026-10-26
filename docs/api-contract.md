@@ -8,7 +8,7 @@
 - Datas/hora ISO 8601 com offset explícito; eventos persistidos em UTC.
 - IDs de Catalog são UUIDs (D-042); ID de usuário é inteiro (D-017).
 
-**Modelo Catalog implementado em código; V3 foi aplicada ao banco local em 2026-10-21:** Benefit é cadastrado com um ou mais Discounts na mesma tela e começa inativo. Depois, Establishment é criado com Category e Benefit existentes. Cada Establishment recebe exatamente um Benefit e cada Benefit pode pertencer a no máximo um Establishment; o benefício ativa no primeiro vínculo e permanece ativo/inativo conforme edição manual após isso (D-044 a D-050). A contagem anterior à aplicação confirmou zero linhas em Establishment e Benefit. Em outros bancos, V3 falha se essas tabelas tiverem dados, pois o campo textual antigo não pode ser convertido automaticamente em `value` e `description`.
+**Modelo Catalog atual:** Benefit é cadastrado com um ou mais Discounts na mesma tela e começa inativo. Depois, Establishment é criado com Category e Benefit existentes. Cada Establishment recebe exatamente um Benefit e um Benefit pode estar associado a vários Establishments (D-057). O benefício ativa no primeiro vínculo e mantém o estado após vínculos adicionais, conforme edição manual. V3 preserva a regra antiga de exclusividade no histórico; V6 a remove sem alterar associações já existentes.
 - Listas com paginação e tamanho máximo fixo no servidor.
 - Erro uniforme RFC 9457 Problem Detail com `status`, `title`, `detail` e `requestId`; nunca incluir stack trace, senha, token, hash ou GPS bruto.
 - `X-Request-Id` acompanha a requisição/resposta conforme a fundação existente.
@@ -47,7 +47,7 @@ Implementado na etapa Catalog:
 
 O catálogo requer sessão autenticada. Listas aceitam `page` e `size`; consultas administrativas têm máximo de 100 itens por página e a busca pública de estabelecimentos limita a 50. `GET /v1/categories/options` retorna a paleta de cores permitida e indica Iconify como fonte de busca de ícones.
 
-Estabelecimentos, categorias, benefícios e serviços inativos não aparecem nas consultas normais. Benefícios são retornados sem nome/título e vinculados a um único estabelecimento. Ícones de categoria são identificadores Iconify; o cliente mobile baixa somente ícones usados ainda ausentes durante sincronização online e mantém cópia local para uso offline. A URL HTTPS opcional da fachada pode ser armazenada em cache pelo cliente. Não há horários, rota de marcas ou consulta de proximidade nesta versão. Busca espacial depende da decisão sobre PostGIS (P-006).
+Estabelecimentos, categorias, benefícios e serviços inativos não aparecem nas consultas normais. Benefícios são retornados sem nome/título; um mesmo benefício pode estar associado a vários estabelecimentos e cada estabelecimento mantém um benefício. Ícones de categoria são identificadores Iconify; o cliente mobile baixa somente ícones usados ainda ausentes durante sincronização online e mantém cópia local para uso offline. A URL HTTPS opcional da fachada pode ser armazenada em cache pelo cliente. Não há horários, rota de marcas ou consulta de proximidade nesta versão. Busca espacial depende da decisão sobre PostGIS (P-006).
 
 ## Administração de catálogo — Catalog/Admin
 
@@ -62,23 +62,27 @@ Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
 
-Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit não tem mais o texto `discount`: exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. `BenefitResponse.establishmentId` é `null` até o vínculo; `EstablishmentResponse.benefitId` identifica o benefício exclusivo.
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. Cada Establishment possui um Benefit e o mesmo Benefit pode estar associado a vários Establishments (D-057); `BenefitResponse.establishmentCount` informa quantos vínculos existem, e `EstablishmentResponse.benefitId` identifica seu benefício.
 
-Também existe `POST /v1/admin/benefits/batch` para cadastrar de 1 a 100 benefícios em uma única requisição. O corpo é `{ "benefits": [...] }`, e cada item usa os mesmos campos e validações de `POST /v1/admin/benefits`. A resposta `201` contém a lista criada, na mesma ordem. A operação é atômica: qualquer validação ou falha de persistência cancela o lote inteiro. O limite de 100 mantém o tamanho da requisição controlado; para lotes maiores, dividir em chamadas e conferir os resultados antes de repetir uma chamada que falhou. Esta rota cadastra Benefits e seus Discounts; não cria nem associa Establishments.
+Existem endpoints de criação em lote para todas as entidades do Catalog: `POST /v1/admin/categories/batch`, `/services/batch`, `/establishments/batch` e `/benefits/batch`. Cada rota recebe o objeto wrapper (`categories`, `services`, `establishments` ou `benefits`) com 1 a 100 entradas, validando cada entrada como na rota individual e retornando `201` com a lista na ordem recebida. Cada lote é atômico dentro do próprio recurso; os quatro lotes não compartilham uma transação. Para evitar nomes duplicados, a criação em lote de Services rejeita nomes repetidos sem diferenciar maiúsculas/minúsculas, tanto entre os itens enviados quanto em conflito com o catálogo existente. O lote de Benefits também cria os Discounts de cada Benefit.
+
+O lote de Establishments exige Categories ativas e Benefits existentes com descontos; faça esses lotes antes do lote de estabelecimentos. Cada Establishment pode compartilhar seu Benefit conforme D-057. Os endpoints batch não têm chave de idempotência: após timeout sem resposta, consulte a lista administrativa antes de reenviar.
 
 Exemplo do fluxo administrativo:
 
-1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
-2. Para cadastrar diversos benefícios sem repetir a chamada, `POST /v1/admin/benefits/batch` recebe `{ "benefits": [ ... ] }`, com 1 a 100 objetos iguais ao corpo individual acima; todos são criados ou nenhum é criado.
-3. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
+1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentCount: 0`.
+2. Para cadastrar diversos itens sem repetir chamadas, envie lotes separados para `POST /v1/admin/categories/batch`, `/v1/admin/services/batch` e `/v1/admin/benefits/batch`; cada um recebe de 1 a 100 objetos no formato de sua rota individual, e cada lote inteiro é criado ou revertido.
+3. `POST /v1/admin/establishments/batch` recebe de 1 a 100 objetos completos (ou use `POST /v1/admin/establishments` para um só), cada qual com `categoryId` e `benefitId` já existentes; ao concluir, associa os benefícios e ativa cada um no primeiro vínculo. O mesmo `benefitId` pode ser informado em vários estabelecimentos.
 4. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
-5. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+5. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; um benefício pode ser escolhido por qualquer quantidade de estabelecimentos.
 
 O catálogo de rotas implementadas, campos, exemplos JSON e respostas está em [`http-api.md`](http-api.md).
 
 `V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 
 `V5__remove_benefit_conditions.sql` remove condições do modelo e das respostas/requisições de Benefit. Antes de remover a coluna aplicada, move seus valores atuais para `benefit_legacy_condition_archive`, sem expor essa tabela pela API. Valores enviados no campo antigo `conditions` não fazem mais parte do contrato.
+
+`V6__allow_shared_benefits.sql` substitui o índice único de `establishment.benefit_id` por um índice comum. A migração não altera os vínculos existentes; depois dela, um mesmo Benefit pode ser associado a vários Establishments.
 
 ## Ações pessoais — Engagement
 

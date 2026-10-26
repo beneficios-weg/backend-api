@@ -23,6 +23,9 @@ public final class CatalogDtos {
             @NotBlank @Size(max = 160) @Pattern(regexp = "[a-z0-9-]+:[a-z0-9-]+") String iconKey,
             @NotBlank @Pattern(regexp = "#[0-9A-Fa-f]{6}") String colorHex) { }
 
+    public record CategoryBatchCreateRequest(
+            @NotEmpty @Size(max = 100) List<@NotNull @Valid CategoryCreateRequest> categories) { }
+
     public record CategoryPatchRequest(
             @Size(min = 6, max = 75) String name,
             @Size(max = 160) @Pattern(regexp = "[a-z0-9-]+:[a-z0-9-]+") String iconKey,
@@ -32,6 +35,9 @@ public final class CatalogDtos {
     }
 
     public record ServiceCreateRequest(@NotBlank @Size(min = 3, max = 75) String name) { }
+
+    public record ServiceBatchCreateRequest(
+            @NotEmpty @Size(max = 100) List<@NotNull @Valid ServiceCreateRequest> services) { }
 
     public record ServicePatchRequest(@Size(min = 3, max = 75) String name, Boolean active) {
         boolean hasChanges() { return name != null || active != null; }
@@ -53,6 +59,9 @@ public final class CatalogDtos {
             @NotNull UUID categoryId,
             @NotNull UUID benefitId,
             List<@NotNull UUID> serviceIds) { }
+
+    public record EstablishmentBatchCreateRequest(
+            @NotEmpty @Size(max = 100) List<@NotNull @Valid EstablishmentCreateRequest> establishments) { }
 
     public record EstablishmentPatchRequest(
             @Size(min = 2, max = 75) String name,
@@ -146,11 +155,11 @@ public final class CatalogDtos {
     }
 
     public record BenefitResponse(UUID id, String audience, String participationInstructions, String contact,
-            UUID establishmentId, List<DiscountResponse> discounts, boolean active, Instant createdAt,
-            Instant updatedAt) {
+            int establishmentCount, List<DiscountResponse> discounts, boolean active,
+            Instant createdAt, Instant updatedAt) {
         static BenefitResponse from(Benefit value) {
             return new BenefitResponse(value.getId(), value.getAudience(), value.getParticipationInstructions(),
-                    value.getContact(), value.getEstablishment() == null ? null : value.getEstablishment().getId(),
+                    value.getContact(), value.getEstablishments().size(),
                     value.getDiscounts().stream().map(DiscountResponse::from).toList(), value.isActive(),
                     value.getCreatedAt(), value.getUpdatedAt());
         }
