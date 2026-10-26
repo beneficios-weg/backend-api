@@ -6,6 +6,7 @@ import com.weg.benefits.identity.IdentityDtos.CreateUserRequest;
 import com.weg.benefits.identity.IdentityDtos.UpdateUserRequest;
 import com.weg.benefits.identity.IdentityDtos.UserResponse;
 import com.weg.benefits.identity.IdentityDtos.UserPageResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,11 +22,11 @@ public class IdentityService {
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final CredentialMailSender credentialMailSender;
-    private final FindByIndexNameSessionRepository<? extends Session> sessions;
+    private final ObjectProvider<FindByIndexNameSessionRepository<? extends Session>> sessions;
 
     public IdentityService(AppUserRepository users, PasswordEncoder passwordEncoder,
             CredentialMailSender credentialMailSender,
-            FindByIndexNameSessionRepository<? extends Session> sessions) {
+            ObjectProvider<FindByIndexNameSessionRepository<? extends Session>> sessions) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.credentialMailSender = credentialMailSender;
@@ -39,7 +40,7 @@ public class IdentityService {
         Role role = request.role() == null ? Role.COLLABORATOR : request.role();
         assertNewIdentity(username, email);
 
-        // The record is flushed before sending so SMTP failure rolls the transaction back.
+        // The record is flushed before sending so a Gmail API rejection rolls the transaction back.
         AppUser user = users.saveAndFlush(new AppUser(username, email,
                 passwordEncoder.encode(request.password()), role));
         credentialMailSender.sendCredentials(email, username, request.password());
@@ -58,6 +59,18 @@ public class IdentityService {
     @Transactional(readOnly = true)
     public UserResponse getUser(Integer id) {
         return UserResponse.from(findUser(id));
+    }
+
+    @Transactional
+    public AppUser lockActiveUserForEngagement(Integer id) {
+        AppUser user = users.findByIdForUpdate(id)
+                .orElseThrow(() -> new IdentityException(HttpStatus.UNAUTHORIZED, "Sessão inválida",
+                        "Não foi possível validar a conta autenticada."));
+        if (!user.isActive()) {
+            throw new IdentityException(HttpStatus.UNAUTHORIZED, "Conta indisponível",
+                    "A conta não está disponível para sincronizar operações.");
+        }
+        return user;
     }
 
     @Transactional
@@ -84,8 +97,7 @@ public class IdentityService {
                     "Uma conta ADMIN não pode ser rebaixada.");
         }
         user.updateIdentity(username, email, requestedRole);
-        sessions.findByPrincipalName(previousUsername).values()
-                .forEach(session -> sessions.deleteById(session.getId()));
+        revokeSessions(previousUsername);
         return UserResponse.from(user);
     }
 
@@ -104,8 +116,7 @@ public class IdentityService {
             return;
         }
         target.deactivate();
-        sessions.findByPrincipalName(target.getUsername()).values()
-                .forEach(session -> sessions.deleteById(session.getId()));
+        revokeSessions(target.getUsername());
     }
 
     @Transactional
@@ -159,6 +170,12 @@ public class IdentityService {
             throw new IdentityException(HttpStatus.CONFLICT, "Conta em uso",
                     "O nome de usuário ou e-mail já está associado a uma conta.");
         }
+    }
+
+    private void revokeSessions(String username) {
+        FindByIndexNameSessionRepository<? extends Session> repository = sessions.getObject();
+        repository.findByPrincipalName(username).values()
+                .forEach(session -> repository.deleteById(session.getId()));
     }
 
     private void validateUsername(String username) {
