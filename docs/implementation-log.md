@@ -407,3 +407,13 @@ Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justifica
 - **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V6 ao banco nesta etapa.
 - **Limitações/riscos:** V6 precisa ser aplicada depois de V5 no próximo deploy; nenhuma migração foi aplicada ao Neon/local nesta alteração.
 - **Próxima etapa:** Integrar a PR #52 em `develop`; no redeploy, Flyway aplicará V6 após V5. Atualizar clientes que esperavam `BenefitResponse.establishmentId` para ler `establishmentCount` antes de depender da contagem de vínculos.
+
+### Criação em lote para todo o Catalog — 2026-10-26
+
+- **Objetivo e estado:** Permitir cadastrar em uma requisição vários registros de cada entidade do catálogo. Adicionados endpoints batch para Category, Service e Establishment; o de Benefit já existia.
+- **Arquivos criados/alterados:** `CatalogDtos.java`, `CatalogAdminController.java`, `CatalogService.java`, `docs/http-api.md`, `docs/api-contract.md`, `docs/README.md`, `docs/implementation-plan.md`, `docs/decision-register.md`, `README.md` e este diário.
+- **Comportamento e rotas:** `POST /v1/admin/categories/batch`, `POST /v1/admin/services/batch`, `POST /v1/admin/establishments/batch` e o existente `POST /v1/admin/benefits/batch` aceitam 1–100 itens, retornam `201` com a lista na ordem enviada e são atômicos por lote. Cada item mantém as validações da rota individual. Serviços repetidos no mesmo lote, sem distinção de maiúsculas/minúsculas, são rejeitados. Os lotes são separados por recurso; Establishment requer Category ativa e Benefit existente.
+- **Decisões/divergências:** D-058 registra endpoints separados por entidade, limite máximo 100 e atomicidade individual. Não foi criada operação de importação multi-entidade em uma única transação.
+- **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem chamada HTTP manual.
+- **Limitações/riscos:** Lotes não usam chave de idempotência; após timeout, consultar a listagem antes de repetir. Cadastro em lote de Establishments depende de Categories e Benefits já cadastrados.
+- **Próxima etapa:** Revisar e integrar a PR que contém as rotas; depois do deploy, enviar manualmente lotes pequenos via Swagger em `http://localhost:8081/swagger-ui.html` ou na URL da demonstração.

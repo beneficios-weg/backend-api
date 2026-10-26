@@ -79,14 +79,44 @@ Paginação começa em `page=0`; `size` padrão é `20`. A listagem administrati
 
 Todas as rotas desta seção exigem papel `ADMIN`. As listas administrativas usam `page=0` e `size=20` por padrão, com tamanho máximo de 100. As rotas de desativação preservam o registro e suas relações.
 
-| Recurso | Listar | Consultar por ID | Criar | Editar | Desativar |
-|---|---|---|---|---|---|
-| Categorias | `GET /v1/admin/categories` | `GET /v1/admin/categories/{id}` | `POST /v1/admin/categories` | `PATCH /v1/admin/categories/{id}` | `POST /v1/admin/categories/{id}/deactivation` |
-| Serviços | `GET /v1/admin/services` | `GET /v1/admin/services/{id}` | `POST /v1/admin/services` | `PATCH /v1/admin/services/{id}` | `POST /v1/admin/services/{id}/deactivation` |
-| Estabelecimentos | `GET /v1/admin/establishments` | `GET /v1/admin/establishments/{id}` | `POST /v1/admin/establishments` | `PATCH /v1/admin/establishments/{id}` | `POST /v1/admin/establishments/{id}/deactivation` |
-| Benefícios | `GET /v1/admin/benefits` | `GET /v1/admin/benefits/{id}` | `POST /v1/admin/benefits` | `PATCH /v1/admin/benefits/{id}` | `POST /v1/admin/benefits/{id}/deactivation` |
+| Recurso | Listar | Consultar por ID | Criar | Criar em lote | Editar | Desativar |
+|---|---|---|---|---|---|---|
+| Categorias | `GET /v1/admin/categories` | `GET /v1/admin/categories/{id}` | `POST /v1/admin/categories` | `POST /v1/admin/categories/batch` | `PATCH /v1/admin/categories/{id}` | `POST /v1/admin/categories/{id}/deactivation` |
+| Serviços | `GET /v1/admin/services` | `GET /v1/admin/services/{id}` | `POST /v1/admin/services` | `POST /v1/admin/services/batch` | `PATCH /v1/admin/services/{id}` | `POST /v1/admin/services/{id}/deactivation` |
+| Estabelecimentos | `GET /v1/admin/establishments` | `GET /v1/admin/establishments/{id}` | `POST /v1/admin/establishments` | `POST /v1/admin/establishments/batch` | `PATCH /v1/admin/establishments/{id}` | `POST /v1/admin/establishments/{id}/deactivation` |
+| Benefícios | `GET /v1/admin/benefits` | `GET /v1/admin/benefits/{id}` | `POST /v1/admin/benefits` | `POST /v1/admin/benefits/batch` | `PATCH /v1/admin/benefits/{id}` | `POST /v1/admin/benefits/{id}/deactivation` |
 
 Criações individuais retornam `201 Created` com o objeto criado; atualizações retornam `200`; desativações retornam `204`. IDs do catálogo são UUID. Em `PATCH`, envie somente os campos que deseja alterar.
+
+### Criar vários itens do catálogo de uma vez
+
+Cada endpoint `/batch` recebe um objeto com uma lista chamada conforme o recurso (`categories`, `services`, `establishments` ou `benefits`). Cada lista aceita de 1 a 100 objetos e cada objeto usa o mesmo formato e validações da rota de criação individual. A resposta é `201 Created` com uma lista na mesma ordem. O lote é atômico: se qualquer item falhar na validação, nas regras de negócio ou ao salvar, nenhum item daquele lote é mantido.
+
+Exemplo de categorias:
+
+```json
+{
+  "categories": [
+    { "name": "Alimentação", "iconKey": "mdi:food", "colorHex": "#E65100" },
+    { "name": "Mobilidade", "iconKey": "mdi:car", "colorHex": "#0D47A1" }
+  ]
+}
+```
+
+Exemplo de serviços:
+
+```json
+{
+  "services": [
+    { "name": "Estacionamento" },
+    { "name": "Delivery" }
+  ]
+}
+```
+
+Para estabelecimentos, envie os objetos completos descritos na seção abaixo dentro de `establishments`. Cada um precisa referenciar uma categoria ativa e um benefício existente com pelo menos um desconto. Portanto, cadastre categorias e benefícios antes de enviar o lote de estabelecimentos; o mesmo benefício pode ser compartilhado. Os lotes são separados por recurso e não formam uma transação única entre endpoints.
+
+Os lotes de benefícios continuam aceitando `benefits` e também criam seus descontos. Todos os endpoints `/batch` compartilham o limite de 100 itens. Em timeout sem resposta, consulte a lista administrativa antes de repetir, pois esses endpoints não usam chave de idempotência.
 
 ### Criar um benefício
 

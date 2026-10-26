@@ -11,15 +11,18 @@ import com.weg.benefits.catalog.CatalogDtos.BenefitBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitResponse;
 import com.weg.benefits.catalog.CatalogDtos.CategoryCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.CategoryBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryOptionsResponse;
 import com.weg.benefits.catalog.CatalogDtos.CategoryPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryResponse;
 import com.weg.benefits.catalog.CatalogDtos.DiscountInput;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.EstablishmentBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentResponse;
 import com.weg.benefits.catalog.CatalogDtos.PageResponse;
 import com.weg.benefits.catalog.CatalogDtos.ServiceCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.ServiceBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.ServicePatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.ServiceResponse;
 import org.springframework.data.domain.Page;
@@ -57,6 +60,10 @@ public class CatalogService {
                 request.colorHex().toUpperCase(java.util.Locale.ROOT))));
     }
 
+    public List<CategoryResponse> createCategories(CategoryBatchCreateRequest request) {
+        return request.categories().stream().map(this::createCategory).toList();
+    }
+
     public CategoryResponse updateCategory(UUID id, CategoryPatchRequest request) {
         requireChanges(request.hasChanges());
         Category value = category(id);
@@ -84,6 +91,17 @@ public class CatalogService {
             throw CatalogException.conflict("Já existe um serviço com esse nome.");
         }
         return ServiceResponse.from(services.save(new ServiceOption(request.name().trim())));
+    }
+
+    public List<ServiceResponse> createServices(ServiceBatchCreateRequest request) {
+        Set<String> normalizedNames = new HashSet<>();
+        for (ServiceCreateRequest item : request.services()) {
+            String normalized = item.name().trim().toLowerCase(java.util.Locale.ROOT);
+            if (!normalizedNames.add(normalized)) {
+                throw CatalogException.conflict("O lote contém serviços com nomes repetidos.");
+            }
+        }
+        return request.services().stream().map(this::createService).toList();
     }
 
     public ServiceResponse updateService(UUID id, ServicePatchRequest request) {
@@ -120,6 +138,10 @@ public class CatalogService {
                 request.altitude(), imageUrl, category, linkedServices);
         assignBenefit(value, request.benefitId());
         return EstablishmentResponse.from(establishments.save(value));
+    }
+
+    public List<EstablishmentResponse> createEstablishments(EstablishmentBatchCreateRequest request) {
+        return request.establishments().stream().map(this::createEstablishment).toList();
     }
 
     public EstablishmentResponse updateEstablishment(UUID id, EstablishmentPatchRequest request) {

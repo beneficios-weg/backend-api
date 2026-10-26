@@ -9,13 +9,16 @@ import com.weg.benefits.catalog.CatalogDtos.BenefitCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitResponse;
 import com.weg.benefits.catalog.CatalogDtos.CategoryCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.CategoryBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.CategoryResponse;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.EstablishmentBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.EstablishmentResponse;
 import com.weg.benefits.catalog.CatalogDtos.PageResponse;
 import com.weg.benefits.catalog.CatalogDtos.ServiceCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.ServiceBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.ServicePatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.ServiceResponse;
 import jakarta.validation.Valid;
@@ -49,6 +52,12 @@ public class CatalogAdminController {
         return ResponseEntity.created(URI.create("/v1/admin/categories/" + created.id())).body(created);
     }
 
+    @PostMapping("/categories/batch")
+    public ResponseEntity<List<CategoryResponse>> createCategories(
+            @Valid @RequestBody CategoryBatchCreateRequest request) {
+        return ResponseEntity.status(201).body(catalog.createCategories(request));
+    }
+
     @PatchMapping("/categories/{id}")
     public CategoryResponse updateCategory(@PathVariable UUID id, @Valid @RequestBody CategoryPatchRequest request) {
         return catalog.updateCategory(id, request);
@@ -71,6 +80,12 @@ public class CatalogAdminController {
     public ResponseEntity<ServiceResponse> createService(@Valid @RequestBody ServiceCreateRequest request) {
         var created = catalog.createService(request);
         return ResponseEntity.created(URI.create("/v1/admin/services/" + created.id())).body(created);
+    }
+
+    @PostMapping("/services/batch")
+    public ResponseEntity<List<ServiceResponse>> createServices(
+            @Valid @RequestBody ServiceBatchCreateRequest request) {
+        return ResponseEntity.status(201).body(catalog.createServices(request));
     }
 
     @PatchMapping("/services/{id}")
@@ -98,6 +113,12 @@ public class CatalogAdminController {
             @Valid @RequestBody EstablishmentCreateRequest request) {
         var created = catalog.createEstablishment(request);
         return ResponseEntity.created(URI.create("/v1/admin/establishments/" + created.id())).body(created);
+    }
+
+    @PostMapping("/establishments/batch")
+    public ResponseEntity<List<EstablishmentResponse>> createEstablishments(
+            @Valid @RequestBody EstablishmentBatchCreateRequest request) {
+        return ResponseEntity.status(201).body(catalog.createEstablishments(request));
     }
 
     @PatchMapping("/establishments/{id}")

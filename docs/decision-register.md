@@ -63,6 +63,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-055 | Para a demonstração sem custo, hospedar a API no Render Free com URL `onrender.com` e Docker; usar Neon Free como PostgreSQL externo. Segredos ficam somente nas variáveis protegidas dos serviços | Confirmada pelo usuário em 2026-10-26; o usuário autorizou Neon após rejeitar o PostgreSQL Render Free por expiração dos dados |
 | D-056 | Benefit não possui atributo de condições. Valores existentes são arquivados internamente pela V5 e não são devolvidos nem aceitos pela API | Confirmada pelo usuário em 2026-10-26; removida da entidade, DTOs e contrato HTTP sem editar migrações aplicadas |
 | D-057 | Um Benefit pode ser vinculado a vários Establishments; cada Establishment continua associado a exatamente um Benefit | Confirmada pelo usuário em 2026-10-26; V6 remove o índice único, preservando os vínculos atuais |
+| D-058 | Cada recurso do Catalog pode ser criado em lote por endpoint próprio, usando o mesmo DTO/validação da criação individual; os lotes são atômicos e limitados a 100 itens por requisição | Confirmada pelo usuário em 2026-10-26; não cria recursos diferentes no mesmo endpoint/transação |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -122,6 +123,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | Value e description de Discount são obrigatórios; benefício e descontos ficam na mesma tela; Establishment exige Category, Benefit e Discount | Usuário |
 | 2026-10-20 | Benefit é exclusivo de um único Establishment; pode existir sem vínculo até a criação do Establishment | Usuário |
 | 2026-10-26 | Um Benefit pode estar vinculado a vários Establishments; cada Establishment continua associado a um Benefit | Usuário; substitui a exclusividade anterior de D-050 |
+| 2026-10-26 | Adicionar criação em lote para Category, Service e Establishment, mantendo também o lote existente de Benefit; lotes separados por recurso, atômicos e limitados a 100 itens | Usuário |
 | 2026-10-21 | Contagem local anterior à V3 retornou zero em `establishment` e `benefit`; migração V3 aplicada com sucesso | Usuário informou as contagens; Flyway confirmou a aplicação |
 | 2026-10-23 | Dados podem permanecer offline sem prazo até a reconexão; visita após 3 minutos e chave idempotente por estabelecimento + timestamp UTC com janela de duplicidade de 30 minutos (D-051 a D-053). Resta definir o tratamento de pendências após desativação da conta (P-012) | Usuário |
 | 2026-10-23 | Conta desativada na reconexão: a API recusa sincronização; app informa e oferece apagar a fila local; não reatribuir operações a outra conta (D-054/P-012) | Usuário |

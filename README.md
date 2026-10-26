@@ -135,7 +135,7 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 ## HTTP API reference
 
 See [docs/http-api.md](docs/http-api.md) for implemented routes, authentication, request fields,
-JSON examples, and the bulk benefit creation endpoint.
+JSON examples, and the bulk creation endpoints for Catalog resources.
 
 Only Actuator health is exposed. Health responses do not include component details; Gmail credentials
 are not checked by the health endpoint. Flyway V1 creates Identity and PostgreSQL-backed sessions;
