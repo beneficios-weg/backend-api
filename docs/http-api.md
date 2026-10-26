@@ -97,7 +97,6 @@ Criações individuais retornam `201 Created` com o objeto criado; atualizaçõe
   "audience": "Colaboradores WEG e familiares",
   "participationInstructions": "Apresente o crachá WEG ou documento funcional no momento do pagamento.",
   "contact": "(47) 99914-1233",
-  "conditions": "Válido de segunda a sexta-feira. Não cumulativo com outras promoções.",
   "discounts": [
     {
       "value": "Até 50%",
@@ -111,7 +110,7 @@ Criações individuais retornam `201 Created` com o objeto criado; atualizaçõe
 }
 ```
 
-Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracteres), `contact`, `conditions` (10–300) e pelo menos um `discount`. Cada desconto exige `value` (2–15) e `description` (10–300). O benefício não tem nome ou título.
+Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracteres), `contact` e pelo menos um `discount`. Cada desconto exige `value` (2–15) e `description` (10–300). O benefício não tem nome, título ou atributo de condições.
 
 ### Criar vários benefícios de uma vez
 
@@ -124,7 +123,6 @@ Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracter
       "audience": "Colaboradores WEG e familiares",
       "participationInstructions": "Apresente o crachá WEG ou documento funcional no momento do pagamento.",
       "contact": "(47) 99914-1233",
-      "conditions": "Válido de segunda a sexta-feira. Não cumulativo com outras promoções.",
       "discounts": [
         {
           "value": "Até 50%",
@@ -136,7 +134,6 @@ Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracter
       "audience": "Colaboradores WEG",
       "participationInstructions": "Apresente o crachá WEG ou documento funcional antes de finalizar o pagamento.",
       "contact": "contato@empresa.com",
-      "conditions": "Válido todos os dias. Não cumulativo com outras promoções.",
       "discounts": [
         {
           "value": "10% OFF",
@@ -150,7 +147,7 @@ Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracter
 
 Sucesso: `201 Created`, com um array de respostas na mesma ordem dos itens enviados. Cada benefício terá UUID, `active: false` e `establishmentId: null` até ser associado.
 
-O lote é atômico: se qualquer item estiver inválido ou ocorrer erro ao salvar, a transação inteira é revertida e nenhum benefício do lote é mantido. A rota cria benefícios e descontos; ela **não** cria estabelecimentos nem categorias, não associa benefícios e não envia e-mail. Em erro, corrija o lote inteiro antes de reenviar. Após um timeout sem resposta, consulte `GET /v1/admin/benefits` para confirmar se o servidor concluiu a chamada antes de repeti-la; o endpoint não usa chave de idempotência.
+O lote é atômico: se qualquer item estiver inválido ou ocorrer erro ao salvar, a transação inteira é revertida e nenhum benefício do lote é mantido. A rota cria benefícios e descontos; ela **não** cria estabelecimentos nem categorias, não associa benefícios e não envia e-mail. O campo `conditions` não faz parte do contrato. Em erro, corrija o lote inteiro antes de reenviar. Após um timeout sem resposta, consulte `GET /v1/admin/benefits` para confirmar se o servidor concluiu a chamada antes de repeti-la; o endpoint não usa chave de idempotência.
 
 ### Campos para criar categoria, serviço e estabelecimento
 

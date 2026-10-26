@@ -68,7 +68,7 @@ Também existe `POST /v1/admin/benefits/batch` para cadastrar de 1 a 100 benefí
 
 Exemplo do fluxo administrativo:
 
-1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact`, `conditions` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
+1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
 2. Para cadastrar diversos benefícios sem repetir a chamada, `POST /v1/admin/benefits/batch` recebe `{ "benefits": [ ... ] }`, com 1 a 100 objetos iguais ao corpo individual acima; todos são criados ou nenhum é criado.
 3. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
 4. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
@@ -77,6 +77,8 @@ Exemplo do fluxo administrativo:
 O catálogo de rotas implementadas, campos, exemplos JSON e respostas está em [`http-api.md`](http-api.md).
 
 `V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
+
+`V5__remove_benefit_conditions.sql` remove condições do modelo e das respostas/requisições de Benefit. Antes de remover a coluna aplicada, move seus valores atuais para `benefit_legacy_condition_archive`, sem expor essa tabela pela API. Valores enviados no campo antigo `conditions` não fazem mais parte do contrato.
 
 ## Ações pessoais — Engagement
 

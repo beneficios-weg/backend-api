@@ -34,9 +34,6 @@ public class Benefit {
     @Column(nullable = false, columnDefinition = "text")
     private String contact;
 
-    @Column(nullable = false, length = 300)
-    private String conditions;
-
     @Column(nullable = false)
     private boolean active;
 
@@ -58,20 +55,18 @@ public class Benefit {
     protected Benefit() { }
 
     Benefit(String audience, String participationInstructions, String contact,
-            String conditions, List<Discount> discounts) {
+            List<Discount> discounts) {
         this.audience = audience;
         this.participationInstructions = participationInstructions;
         this.contact = contact;
-        this.conditions = conditions;
         replaceDiscounts(discounts);
     }
 
     void update(String audience, String participationInstructions, String contact,
-            String conditions, List<Discount> discounts, Boolean active) {
+            List<Discount> discounts, Boolean active) {
         if (audience != null) this.audience = audience;
         if (participationInstructions != null) this.participationInstructions = participationInstructions;
         if (contact != null) this.contact = contact;
-        if (conditions != null) this.conditions = conditions;
         if (discounts != null) replaceDiscounts(discounts);
         if (active != null) this.active = active;
     }
@@ -117,7 +112,6 @@ public class Benefit {
     public String getAudience() { return audience; }
     public String getParticipationInstructions() { return participationInstructions; }
     public String getContact() { return contact; }
-    public String getConditions() { return conditions; }
     public boolean isActive() { return active; }
     public Establishment getEstablishment() { return establishment; }
     public List<Discount> getDiscounts() { return List.copyOf(discounts); }

@@ -387,3 +387,13 @@ Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justifica
 - **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; os testes foram pulados. `git diff --check` passou. `git push -u origin codex/benefit-batch-api-docs` passou. Testes não foram adicionados nem executados.
 - **Limitações/riscos:** O endpoint não possui chave de idempotência; se houver timeout sem resposta, o cliente deve consultar a lista administrativa antes de repetir a chamada.
 - **Próxima etapa:** Abrir PR para `develop` pelo link informado no relatório; após o merge, validar o endpoint no ambiente de demonstração.
+
+### Remoção de condições de Benefit — 2026-10-26
+
+- **Objetivo e estado:** Remover o atributo `conditions` de Benefit conforme a nova decisão do usuário. Criada migração V5; migrações anteriores permanecem imutáveis.
+- **Arquivos criados/alterados:** `Benefit.java`, `CatalogDtos.java`, `CatalogService.java`, `V5__remove_benefit_conditions.sql`, `README.md`, `docs/api-contract.md`, `docs/http-api.md`, `docs/modelo-de-dados.md`, `docs/decision-register.md` e este diário.
+- **Comportamento e contrato:** `conditions` deixou de ser aceito em criação/edição e deixou de constar nas respostas de benefício, incluindo o endpoint de lote. A V5 copia valores existentes para `benefit_legacy_condition_archive` e remove a coluna da tabela `benefit`; a tabela de arquivo não é exposta pela API.
+- **Decisões/divergências:** D-056 registra a remoção. D-041 foi marcada como parcialmente supersedida: Benefícios podem permanecer sem estabelecimento, e condições não fazem mais parte do modelo. Nenhum dado histórico será descartado pela V5.
+- **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V5 no banco nesta etapa.
+- **Limitações/riscos:** Ao aplicar V5 em qualquer ambiente, Flyway arquivará os textos de condições já existentes. Clientes antigos que enviem `conditions` precisam atualizar seus JSONs; esse campo já não integra o contrato novo.
+- **Próxima etapa:** Commitar e enviar a migração/remoção na branch da PR para `develop`; integrar a PR antes do redeploy para que Flyway aplique V5 no startup.

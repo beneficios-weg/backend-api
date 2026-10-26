@@ -95,7 +95,6 @@ public final class CatalogDtos {
             @NotBlank String audience,
             @NotBlank @Size(min = 50, max = 300) String participationInstructions,
             @NotBlank String contact,
-            @NotBlank @Size(min = 10, max = 300) String conditions,
             @NotEmpty List<@NotNull @Valid DiscountInput> discounts) { }
 
     public record BenefitBatchCreateRequest(
@@ -105,12 +104,11 @@ public final class CatalogDtos {
             String audience,
             @Size(min = 50, max = 300) String participationInstructions,
             String contact,
-            @Size(min = 10, max = 300) String conditions,
             List<@NotNull @Valid DiscountInput> discounts,
             Boolean active) {
         boolean hasChanges() {
             return audience != null || participationInstructions != null || contact != null
-                    || conditions != null || discounts != null || active != null;
+                    || discounts != null || active != null;
         }
     }
 
@@ -148,12 +146,11 @@ public final class CatalogDtos {
     }
 
     public record BenefitResponse(UUID id, String audience, String participationInstructions, String contact,
-            String conditions, UUID establishmentId, List<DiscountResponse> discounts, boolean active,
-            Instant createdAt, Instant updatedAt) {
+            UUID establishmentId, List<DiscountResponse> discounts, boolean active, Instant createdAt,
+            Instant updatedAt) {
         static BenefitResponse from(Benefit value) {
             return new BenefitResponse(value.getId(), value.getAudience(), value.getParticipationInstructions(),
-                    value.getContact(), value.getConditions(),
-                    value.getEstablishment() == null ? null : value.getEstablishment().getId(),
+                    value.getContact(), value.getEstablishment() == null ? null : value.getEstablishment().getId(),
                     value.getDiscounts().stream().map(DiscountResponse::from).toList(), value.isActive(),
                     value.getCreatedAt(), value.getUpdatedAt());
         }
