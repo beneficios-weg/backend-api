@@ -367,3 +367,13 @@ Adicione uma entrada neste formato ao concluir cada etapa:
 ## Importante
 
 Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justificativas sigilosas. O resumo retornado ao usuário deve permitir atualizar a conversa de planejamento sem expor segredos.
+
+### Conexão Neon e validação de readiness — 2026-10-26
+
+- **Objetivo e estado:** Preparar a branch Neon `production`, preservar o banco local e validar a inicialização da API para o deploy. Banco Neon conectado, esquema e dados migrados; deploy Render ainda não criado.
+- **Arquivos alterados:** `.gitignore`, `pom.xml`, `src/main/java/com/weg/benefits/config/WebSecurityConfiguration.java` e este diário.
+- **Comportamento/configuração:** Segredos locais `.env.*` e o contexto `.neon` são ignorados pelo Git. Adicionado `spring-boot-starter-restclient`, necessário ao bean `RestClient.Builder` usado pela Gmail API. Liberados `/actuator/health/**` para permitir o readiness check do Render.
+- **Migrações/dados:** Flyway aplicou V1–V4 à branch Neon. Importados os dados locais (1 usuário ADMIN, 1 categoria, 1 serviço, 1 estabelecimento, 1 benefício e 2 descontos); favoritos e visitas estavam vazios. `spring_session` e `spring_session_attributes` foram excluídas da importação. Banco local preservado e exportado para backup temporário fora do repositório. Uma senha da role de banco que apareceu em saída de diagnóstico foi rotacionada; operações concluídas e a credencial anterior invalidada.
+- **Comandos e resultados:** `docker build -t weg-benefits-api:neon-check .` passou com Java 21 (`BUILD SUCCESS`, testes pulados). Inicialização contra Neon confirmou Flyway v4 e, após correções, container permaneceu `running`; `GET http://localhost:18081/actuator/health/readiness` respondeu `UP`. Contagens remotas confirmaram os dados acima e zero sessões.
+- **Limitações/riscos:** Não há serviço Render criado nem deploy público. Ainda é necessário integrar esta correção em `develop`, criar o serviço, configurar variáveis seguras do banco/Gmail e CORS, e confirmar health/login no URL Render. P-015 (backup externo independente e teste de restauração) permanece aberta; backup local temporário não a resolve.
+- **Próxima etapa:** Abrir PR para `develop`; após merge, criar/configurar o serviço Render e validar a implantação sem sobrescrever dados.

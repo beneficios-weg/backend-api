@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+.neon
+node_modules/
+.env
+.env.*
+!.env.example
