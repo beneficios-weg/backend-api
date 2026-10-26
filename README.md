@@ -61,6 +61,32 @@ $env:CORS_ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:5173"
 .\mvnw.cmd spring-boot:run
 ```
 
+## Public demo deployment (Render + Neon)
+
+The deployment configuration uses a free Render web service for the API and Neon Free for PostgreSQL.
+Render's free web service can sleep after inactivity, so the first request after sleep may take longer.
+The database is external to Render; do not add a Render Free PostgreSQL resource because it expires.
+
+1. Create a PostgreSQL project in Neon Free and copy its pooled connection details. In Render, set
+   `DB_URL` as a JDBC URL (`jdbc:postgresql://<pooler-host>/<database>?sslmode=require`) and set
+   `DB_USERNAME` and `DB_PASSWORD` separately. Keep all credentials in Render environment secrets.
+2. Merge the deployment-configuration pull request into `develop`, then create/sync a Blueprint in
+   Render from `beneficios-weg/backend-api`, branch `develop`, using the root `render.yaml`.
+3. Supply the database and Gmail OAuth variables when Render asks for them. Configure
+   `CORS_ALLOWED_ORIGINS` with exact browser-client origins, comma-separated; never use `*` in
+   production. Set `SESSION_COOKIE_SECURE=true` (already configured by the Blueprint).
+4. Ensure the Google OAuth consent app is published and has completed any verification required for
+   `gmail.send`. While the app remains in Testing, its refresh token is short-lived and must be
+   renewed; deployment alone does not make it permanent.
+5. Wait for Render's `/actuator/health/readiness` check to pass. Flyway applies the migrations on
+   startup. Provision the initial ADMIN only after the production database and Gmail API secrets are
+   ready; do not reuse the local development database password.
+
+The Neon Free plan has usage limits and a six-hour instant-restore window. It is not a substitute for
+an independent backup. Until an off-site backup and restore procedure is configured, treat this as a
+demo environment and export important data regularly. The Render service URL uses its generated
+`onrender.com` subdomain; no custom domain is required.
+
 Before creating users or provisioning the initial ADMIN, configure Gmail API OAuth credentials:
 `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN`. Set `GMAIL_SENDER` to
 `wegbenefits@gmail.com` (the default). Keep the client secret and refresh token in environment
@@ -86,16 +112,11 @@ seven days for this Gmail scope. Reauthorize when it expires, or complete the Go
 verification steps before relying on it for a persistent deployment. Publishing alone does not
 complete verification for the sensitive `gmail.send` scope.
 
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`, `GMAIL_CLIENT_ID`,
-`GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `GMAIL_SENDER` can be configured per environment.
-Production CORS origins must be explicit;
-wildcard origins are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared
-or production environment.
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`,
-`MAIL_APP_PASSWORD`, and `MAIL_FROM` can be configured per environment. The API defaults to port
-`8081`; set `SERVER_PORT` to override it. Production CORS origins must be explicit; wildcard origins
-are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared or production
-environment.
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `PORT`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`,
+`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `GMAIL_SENDER` can be configured
+per environment. The local port remains `8081` unless `SERVER_PORT` is set; `PORT` takes precedence
+when the hosting platform supplies it. Production CORS origins must be explicit; wildcard origins are
+rejected. Set `SESSION_COOKIE_SECURE=true` behind HTTPS.
 
 Provision the first ADMIN from an interactive PowerShell terminal after the database and Gmail API
 OAuth configuration are ready. The password is read without echo and is not passed as an argument:
@@ -112,16 +133,9 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 - Swagger UI: `http://localhost:8081/swagger-ui.html`
 
 Only Actuator health is exposed. Health responses do not include component details; Gmail credentials
-are not checked by the health endpoint. Flyway creates
-the Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement
-tables exist yet.
-Only Actuator health is exposed. Health responses do not include component details, and the aggregate
-health check covers the application/database rather than SMTP. SMTP is required for account creation;
-invalid Gmail credentials make that operation fail even when API health is `UP`. Flyway V1 creates the
-Identity user and PostgreSQL-backed Spring Session tables; V2/V3 define Catalog; V4 defines favorites
-and visits. V3 aborts startup if
-the database already contains rows in `establishment` or `benefit`; inspect and map those records before
-starting the updated API against a database with Catalog data.
+are not checked by the health endpoint. Flyway V1 creates Identity and PostgreSQL-backed sessions;
+V2/V3 create Catalog; V4 creates favorites and visits. V3 aborts startup if the database has legacy
+rows in `establishment` or `benefit`; inspect and map those records before applying that migration.
 
 ## Initial package boundaries
 
