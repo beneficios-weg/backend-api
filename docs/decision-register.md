@@ -60,6 +60,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-052 | O cliente registra uma visita após o usuário permanecer por 3 minutos no estabelecimento; a API recebe o evento final e não coleta trilha GPS | Confirmada pelo usuário em 2026-10-23 |
 | D-053 | Reenvios de visita usam uma chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; não registrar outra visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos | Proposta aceita pelo usuário em 2026-10-23; horário de ocorrência enviado pelo cliente |
 | D-054 | Se a conta estiver desativada quando houver reconexão, a API recusa a sincronização; o app avisa o usuário e oferece apagar a fila local. Operações pendentes nunca são enviadas sob outra conta | Confirmada pelo usuário em 2026-10-23 |
+| D-055 | Para a demonstração sem custo, hospedar a API no Render Free com URL `onrender.com` e Docker; usar Neon Free como PostgreSQL externo. Segredos ficam somente nas variáveis protegidas dos serviços | Confirmada pelo usuário em 2026-10-26; o usuário autorizou Neon após rejeitar o PostgreSQL Render Free por expiração dos dados |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -75,7 +76,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-012 | O que ocorre com dados locais pendentes se a conta for desativada antes da reconexão? | A API recusa a sincronização; app avisa o usuário e oferece apagar a fila. Nunca enviar operações sob outra conta (D-054) | Fechado |
 | P-013 | Fotos serão URLs pré-cadastradas ou upload com storage? | URL HTTPS opcional, sem upload nesta versão (D-038) | Fechado para Catalog |
 | P-014 | Avaliações 1–5 entram no MVP? | Manter fora até aprovação explícita | Catalog/Engagement |
-| P-015 | Onde a API será hospedada e como backups/restauração serão operados? | Decidir antes da entrega compartilhada | Release |
+| P-015 | Como executar e testar cópias de segurança independentes e restauração dos dados? A hospedagem foi decidida em D-055, mas o Neon Free oferece apenas janela de restauração instantânea limitada | Configurar exportação periódica para armazenamento independente e testar restauração antes de tratar como produção | Release |
 | P-016 | Qual o limite real de horas/equipe dedicado à API? | Plano original citava 30 horas para o projeto inteiro; repartir com mobile e desktop | Planejamento |
 | P-017 | IDs numéricos substituem UUID para as entidades Catalog existentes? | Resolvido por D-043: os IDs atuais continuam UUID; nenhum ID de rota muda | Fechado |
 | P-018 | Cada Establishment terá exatamente um Benefit? | Resolvido por D-044 e D-050 | Fechado |

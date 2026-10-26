@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: weg-benefits-api
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: develop
+    autoDeployTrigger: commit
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REFRESH_TOKEN
+        sync: false
+      - key: GMAIL_SENDER
+        value: wegbenefits@gmail.com
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
