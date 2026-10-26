@@ -61,18 +61,39 @@ $env:CORS_ALLOWED_ORIGINS = "http://localhost:3000,http://localhost:5173"
 .\mvnw.cmd spring-boot:run
 ```
 
-Set `MAIL_APP_PASSWORD` before creating users or provisioning the initial ADMIN. It is the Google
-App Password for `wegbenefits@gmail.com` and must not be committed. `MAIL_USERNAME` is the Gmail SMTP
-account and `MAIL_FROM` defaults to the agreed sender. SMTP failure rolls back user creation and is
-returned to the administrator as a generic API problem response.
+Before creating users or provisioning the initial ADMIN, configure Gmail API OAuth credentials:
+`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN`. Set `GMAIL_SENDER` to
+`wegbenefits@gmail.com` (the default). Keep the client secret and refresh token in environment
+secrets; never commit them. The API exchanges the refresh token for an access token and sends the
+message through Gmail over HTTPS. A Gmail API error rolls back user creation and is returned to the
+administrator as a generic API problem response. Gmail accepting the API request does not guarantee
+delivery to the recipient; a later bounce does not roll back the account.
 
-`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `MAIL_USERNAME`, `MAIL_APP_PASSWORD`,
-and `MAIL_FROM` can be configured per environment. Production CORS origins must be explicit;
+In Render, add these values under the service's **Environment** settings. For local PowerShell,
+enter the confidential values without echoing them into the terminal:
+
+```powershell
+$env:GMAIL_CLIENT_ID = Read-Host "OAuth client ID"
+$clientSecretSecure = Read-Host "OAuth client secret" -AsSecureString
+$env:GMAIL_CLIENT_SECRET = [System.Net.NetworkCredential]::new("", $clientSecretSecure).Password
+$refreshTokenSecure = Read-Host "OAuth refresh token" -AsSecureString
+$env:GMAIL_REFRESH_TOKEN = [System.Net.NetworkCredential]::new("", $refreshTokenSecure).Password
+$env:GMAIL_SENDER = "wegbenefits@gmail.com"
+```
+
+If the OAuth consent screen is still in **Testing**, Google limits the refresh-token lifetime to
+seven days for this Gmail scope. Reauthorize when it expires, or complete the Google publishing and
+verification steps before relying on it for a persistent deployment. Publishing alone does not
+complete verification for the sensitive `gmail.send` scope.
+
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `SERVER_PORT`, `CORS_ALLOWED_ORIGINS`, `GMAIL_CLIENT_ID`,
+`GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `GMAIL_SENDER` can be configured per environment.
+Production CORS origins must be explicit;
 wildcard origins are rejected. Set `SESSION_COOKIE_SECURE=true` when HTTPS is terminated in a shared
 or production environment.
 
-Provision the first ADMIN from an interactive PowerShell terminal after the database and SMTP
-configuration are ready. The password is read without echo and is not passed as an argument:
+Provision the first ADMIN from an interactive PowerShell terminal after the database and Gmail API
+OAuth configuration are ready. The password is read without echo and is not passed as an argument:
 
 ```powershell
 .\mvnw.cmd -DskipTests package
@@ -81,11 +102,12 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 
 ## Available infrastructure endpoints
 
-- Health: `http://localhost:8080/actuator/health`
-- OpenAPI JSON: `http://localhost:8080/v1/api-docs`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Health: `http://localhost:8081/actuator/health`
+- OpenAPI JSON: `http://localhost:8081/v1/api-docs`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
 
-Only Actuator health is exposed. Health responses do not include component details. Flyway creates
+Only Actuator health is exposed. Health responses do not include component details; Gmail credentials
+are not checked by the health endpoint. Flyway creates
 the Identity user table and PostgreSQL-backed Spring Session tables; no catalog or engagement
 tables exist yet.
 

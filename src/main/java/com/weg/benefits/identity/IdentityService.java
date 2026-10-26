@@ -39,7 +39,7 @@ public class IdentityService {
         Role role = request.role() == null ? Role.COLLABORATOR : request.role();
         assertNewIdentity(username, email);
 
-        // The record is flushed before sending so SMTP failure rolls the transaction back.
+        // The record is flushed before sending so a Gmail API rejection rolls the transaction back.
         AppUser user = users.saveAndFlush(new AppUser(username, email,
                 passwordEncoder.encode(request.password()), role));
         credentialMailSender.sendCredentials(email, username, request.password());
