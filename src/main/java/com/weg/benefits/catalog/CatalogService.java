@@ -182,7 +182,7 @@ public class CatalogService {
         validateDiscounts(request.discounts());
         return BenefitResponse.from(benefits.save(new Benefit(request.audience().trim(),
                 request.participationInstructions().trim(), request.contact().trim(),
-                request.conditions().trim(), discounts(request.discounts()))));
+                discounts(request.discounts()))));
     }
 
     public List<BenefitResponse> createBenefits(BenefitBatchCreateRequest request) {
@@ -194,12 +194,10 @@ public class CatalogService {
         validateOptionalText(request.audience(), "público");
         validateOptionalText(request.contact(), "contato");
         validateOptionalLength(request.participationInstructions(), 50, 300, "instruções de participação");
-        validateOptionalLength(request.conditions(), 10, 300, "condições");
         if (request.discounts() != null) validateDiscounts(request.discounts());
         Benefit value = benefit(id);
         value.update(trim(request.audience()), trim(request.participationInstructions()), trim(request.contact()),
-                trim(request.conditions()), request.discounts() == null ? null : discounts(request.discounts()),
-                request.active());
+                request.discounts() == null ? null : discounts(request.discounts()), request.active());
         return BenefitResponse.from(value);
     }
 
