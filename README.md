@@ -132,6 +132,11 @@ java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --
 - OpenAPI JSON: `http://localhost:8081/v1/api-docs`
 - Swagger UI: `http://localhost:8081/swagger-ui.html`
 
+## HTTP API reference
+
+See [docs/http-api.md](docs/http-api.md) for implemented routes, authentication, request fields,
+JSON examples, and the bulk benefit creation endpoint.
+
 Only Actuator health is exposed. Health responses do not include component details; Gmail credentials
 are not checked by the health endpoint. Flyway V1 creates Identity and PostgreSQL-backed sessions;
 V2/V3 create Catalog; V4 creates favorites and visits. V3 aborts startup if the database has legacy
