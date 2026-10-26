@@ -1,8 +1,10 @@
 package com.weg.benefits.catalog;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
+import com.weg.benefits.catalog.CatalogDtos.BenefitBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitResponse;
@@ -121,6 +123,12 @@ public class CatalogAdminController {
     public ResponseEntity<BenefitResponse> createBenefit(@Valid @RequestBody BenefitCreateRequest request) {
         var created = catalog.createBenefit(request);
         return ResponseEntity.created(URI.create("/v1/admin/benefits/" + created.id())).body(created);
+    }
+
+    @PostMapping("/benefits/batch")
+    public ResponseEntity<List<BenefitResponse>> createBenefits(
+            @Valid @RequestBody BenefitBatchCreateRequest request) {
+        return ResponseEntity.status(201).body(catalog.createBenefits(request));
     }
 
     @PatchMapping("/benefits/{id}")

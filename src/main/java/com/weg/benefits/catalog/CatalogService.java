@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.weg.benefits.catalog.CatalogDtos.BenefitCreateRequest;
+import com.weg.benefits.catalog.CatalogDtos.BenefitBatchCreateRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitPatchRequest;
 import com.weg.benefits.catalog.CatalogDtos.BenefitResponse;
 import com.weg.benefits.catalog.CatalogDtos.CategoryCreateRequest;
@@ -182,6 +183,10 @@ public class CatalogService {
         return BenefitResponse.from(benefits.save(new Benefit(request.audience().trim(),
                 request.participationInstructions().trim(), request.contact().trim(),
                 request.conditions().trim(), discounts(request.discounts()))));
+    }
+
+    public List<BenefitResponse> createBenefits(BenefitBatchCreateRequest request) {
+        return request.benefits().stream().map(this::createBenefit).toList();
     }
 
     public BenefitResponse updateBenefit(UUID id, BenefitPatchRequest request) {

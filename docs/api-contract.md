@@ -64,12 +64,17 @@ As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` 
 
 Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit não tem mais o texto `discount`: exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. `BenefitResponse.establishmentId` é `null` até o vínculo; `EstablishmentResponse.benefitId` identifica o benefício exclusivo.
 
+Também existe `POST /v1/admin/benefits/batch` para cadastrar de 1 a 100 benefícios em uma única requisição. O corpo é `{ "benefits": [...] }`, e cada item usa os mesmos campos e validações de `POST /v1/admin/benefits`. A resposta `201` contém a lista criada, na mesma ordem. A operação é atômica: qualquer validação ou falha de persistência cancela o lote inteiro. O limite de 100 mantém o tamanho da requisição controlado; para lotes maiores, dividir em chamadas e conferir os resultados antes de repetir uma chamada que falhou. Esta rota cadastra Benefits e seus Discounts; não cria nem associa Establishments.
+
 Exemplo do fluxo administrativo:
 
 1. `POST /v1/admin/benefits` recebe `audience`, `participationInstructions`, `contact`, `conditions` e `discounts: [{"value":"Até 50%","description":"em produtos selecionados"}]`; responde com benefício inativo e `establishmentId: null`.
-2. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
-3. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
-4. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+2. Para cadastrar diversos benefícios sem repetir a chamada, `POST /v1/admin/benefits/batch` recebe `{ "benefits": [ ... ] }`, com 1 a 100 objetos iguais ao corpo individual acima; todos são criados ou nenhum é criado.
+3. `POST /v1/admin/establishments` exige também `categoryId` e `benefitId`; ao concluir, associa um único benefício ao estabelecimento e ativa o benefício se for seu primeiro vínculo.
+4. `PATCH /v1/admin/benefits/{id}` pode substituir a lista inteira de `discounts`; quando o campo é enviado, deve conter pelo menos um item. Omiti-lo mantém a lista atual.
+5. `PATCH /v1/admin/establishments/{id}` aceita `benefitId` para associação ou substituição; o benefício escolhido não pode pertencer a outro estabelecimento.
+
+O catálogo de rotas implementadas, campos, exemplos JSON e respostas está em [`http-api.md`](http-api.md).
 
 `V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 

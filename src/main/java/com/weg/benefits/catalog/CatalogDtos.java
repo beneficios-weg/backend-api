@@ -98,6 +98,9 @@ public final class CatalogDtos {
             @NotBlank @Size(min = 10, max = 300) String conditions,
             @NotEmpty List<@NotNull @Valid DiscountInput> discounts) { }
 
+    public record BenefitBatchCreateRequest(
+            @NotEmpty @Size(max = 100) List<@NotNull @Valid BenefitCreateRequest> benefits) { }
+
     public record BenefitPatchRequest(
             String audience,
             @Size(min = 50, max = 300) String participationInstructions,
