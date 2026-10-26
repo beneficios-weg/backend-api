@@ -146,11 +146,11 @@ public final class CatalogDtos {
     }
 
     public record BenefitResponse(UUID id, String audience, String participationInstructions, String contact,
-            UUID establishmentId, List<DiscountResponse> discounts, boolean active, Instant createdAt,
-            Instant updatedAt) {
+            int establishmentCount, List<DiscountResponse> discounts, boolean active,
+            Instant createdAt, Instant updatedAt) {
         static BenefitResponse from(Benefit value) {
             return new BenefitResponse(value.getId(), value.getAudience(), value.getParticipationInstructions(),
-                    value.getContact(), value.getEstablishment() == null ? null : value.getEstablishment().getId(),
+                    value.getContact(), value.getEstablishments().size(),
                     value.getDiscounts().stream().map(DiscountResponse::from).toList(), value.isActive(),
                     value.getCreatedAt(), value.getUpdatedAt());
         }

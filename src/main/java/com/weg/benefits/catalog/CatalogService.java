@@ -214,7 +214,7 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public PageResponse<BenefitResponse> activeBenefits(UUID establishmentId, int page, int size) {
         if (establishmentId == null) throw CatalogException.invalid("Informe o estabelecimento.");
-        Page<Benefit> results = benefits.findAllByActiveTrueAndEstablishment_IdAndEstablishment_ActiveTrueAndEstablishment_Category_ActiveTrueOrderByIdAsc(
+        Page<Benefit> results = benefits.findActiveByEstablishment(
                 establishmentId, pageable(page, size));
         return map(results, BenefitResponse::from);
     }
@@ -241,9 +241,6 @@ public class CatalogService {
                 .orElseThrow(() -> CatalogException.notFound("Benefício"));
         if (selected.getDiscounts().isEmpty()) {
             throw CatalogException.invalid("O benefício selecionado precisa ter ao menos um desconto.");
-        }
-        if (selected.getEstablishment() != null && selected.getEstablishment() != establishment) {
-            throw CatalogException.conflict("O benefício já está vinculado a outro estabelecimento.");
         }
         Benefit previous = establishment.getBenefit();
         if (previous != null && previous != selected) previous.unlinkFrom(establishment);

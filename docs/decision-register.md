@@ -41,7 +41,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-033 | Não será adicionada configuração CORS além da allowlist já existente, salvo necessidade do cliente web | Confirmada como preferência atual; CORS não se aplica a cliente mobile nativo e só será necessário para navegador em origem diferente |
 | D-034 | Para manter sessão após fechar o cliente ou reiniciar a API, persistir a sessão no PostgreSQL e manter cookie persistente sem prazo automático até logout/revogação | Proposta aceita pelo usuário |
 | D-035 | A rota para desativação de usuário será `POST /v1/admin/users/{id}/deactivation` | Confirmada pelo usuário em 2026-10-19 |
-| D-036 | Benefício não terá nome/título próprio; cada benefício pertence a exatamente um estabelecimento, e um estabelecimento pode ter vários benefícios | Parcialmente supersedida por D-044: permanece sem nome/título e pertence a um estabelecimento, mas a cardinalidade agora é 1:1 |
+| D-036 | Benefício não terá nome/título próprio; decisão original de cardinalidade permitia vários Benefits por Establishment | Parcialmente supersedida por D-044/D-050 e depois por D-057; permanece sem nome/título e cada Establishment mantém exatamente um Benefit |
 | D-037 | Horários de funcionamento ficam fora da primeira versão da API: não serão armazenados, consultados nem retornados | Confirmada pelo usuário |
 | D-038 | A fachada pode ter URL HTTPS opcional informada pelo ADMIN; a API não fará upload nem armazenará o arquivo de imagem | Proposta aceita pelo usuário; o cliente deve baixar e manter em cache imagens necessárias para uso offline |
 | D-039 | Itens do catálogo serão desativados sem exclusão física; registros e relações históricas serão preservados, e itens inativos não aparecem nas consultas normais do catálogo | Proposta aceita pelo usuário; regras de sincronização offline de visitas foram definidas em D-051 a D-054 |
@@ -49,19 +49,20 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-041 | Decisão original de obrigatoriedade de público, instruções de participação, contato, desconto, condições e estabelecimento | Parcialmente supersedida: D-044/D-050 permitem Benefit sem estabelecimento e D-056 remove condições; D-045 define Discount separado e obrigatório |
 | D-042 | Category, Service, Establishment e Benefit usarão identificadores UUID | Confirmada pelo usuário em 2026-10-20; IDs de usuários permanecem inteiros conforme D-017 |
 | D-043 | A revisão da modelagem mantém UUID para Category, Service, Establishment e Benefit; a nova entidade Discount seguirá UUID conforme o padrão do catálogo | Confirmada pelo usuário em 2026-10-20 |
-| D-044 | Cada Establishment deverá referenciar exatamente um Benefit, e cada Benefit pode pertencer a no máximo um Establishment | Confirmada pelo usuário em 2026-10-20; Benefit pode existir sem vínculo antes da criação do estabelecimento |
+| D-044 | Regra anterior: cada Establishment referencia exatamente um Benefit, e Benefit pertencia a no máximo um Establishment | Parcialmente supersedida por D-057: permanece um Benefit obrigatório por Establishment; o mesmo Benefit pode estar em vários Establishments |
 | D-045 | Discount será entidade própria 1:N por Benefit; cada Benefit terá pelo menos um Discount. `value` terá 2–15 caracteres e `description` 10–300 | Confirmada pelo usuário em 2026-10-20; V3 interrompe em banco com dados legados para que sejam mapeados sem descarte ou divisão presumida |
 | D-046 | Permanecem as decisões existentes de Iconify (D-040), username (D-022) e Estado como sigla UF; os trechos divergentes do PDF não as substituem | Confirmada pelo usuário em 2026-10-20 |
 | D-047 | `Discount.value` e `Discount.description` são obrigatórios; limites de 2–15 e 10–300 caracteres, respectivamente | Confirmada pelo usuário em 2026-10-20 |
 | D-048 | Benefício e descontos são criados/editados na mesma tela administrativa antes da associação. Establishment só pode ser criado quando Category e Benefit com Discount existirem | Confirmada pelo usuário em 2026-10-20; o protótipo recebido em 2026-10-20 orienta o fluxo de telas |
 | D-049 | Benefit começa inativo e ativa quando associado pela primeira vez a um Establishment; uma desativação manual permanece mesmo com estabelecimentos vinculados | Confirmada pelo texto visível no protótipo enviado em 2026-10-20 |
-| D-050 | Benefício é exclusivo de um estabelecimento: um Benefit associa-se a no máximo um Establishment. Pode ser cadastrado antes, sem vínculo, e cada Establishment criado pela API exige exatamente um Benefit | Confirmada pelo usuário em 2026-10-20; prevalece sobre a legenda plural do protótipo |
+| D-050 | Regra anterior: Benefit era exclusivo de um Establishment. Podia ser cadastrado antes, sem vínculo, e cada Establishment exige um Benefit | Supersedida por D-057 quanto à exclusividade; Benefit ainda pode existir sem vínculo e cada Establishment continua exigindo um Benefit |
 | D-051 | Dados e operações do cliente podem permanecer offline sem prazo de expiração até a reconexão | Confirmada pelo usuário em 2026-10-23; desativação da conta tratada em D-054 |
 | D-052 | O cliente registra uma visita após o usuário permanecer por 3 minutos no estabelecimento; a API recebe o evento final e não coleta trilha GPS | Confirmada pelo usuário em 2026-10-23 |
 | D-053 | Reenvios de visita usam uma chave idempotente estável formada pelo estabelecimento e timestamp UTC do evento; não registrar outra visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos | Proposta aceita pelo usuário em 2026-10-23; horário de ocorrência enviado pelo cliente |
 | D-054 | Se a conta estiver desativada quando houver reconexão, a API recusa a sincronização; o app avisa o usuário e oferece apagar a fila local. Operações pendentes nunca são enviadas sob outra conta | Confirmada pelo usuário em 2026-10-23 |
 | D-055 | Para a demonstração sem custo, hospedar a API no Render Free com URL `onrender.com` e Docker; usar Neon Free como PostgreSQL externo. Segredos ficam somente nas variáveis protegidas dos serviços | Confirmada pelo usuário em 2026-10-26; o usuário autorizou Neon após rejeitar o PostgreSQL Render Free por expiração dos dados |
 | D-056 | Benefit não possui atributo de condições. Valores existentes são arquivados internamente pela V5 e não são devolvidos nem aceitos pela API | Confirmada pelo usuário em 2026-10-26; removida da entidade, DTOs e contrato HTTP sem editar migrações aplicadas |
+| D-057 | Um Benefit pode ser vinculado a vários Establishments; cada Establishment continua associado a exatamente um Benefit | Confirmada pelo usuário em 2026-10-26; V6 remove o índice único, preservando os vínculos atuais |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -88,7 +89,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-023 | Como representar pela API o cadastro de Benefit/Discount na tela própria e depois a associação de Category/Benefit durante a criação de Establishment? | Criar/editar Benefit com lista não vazia de Discounts; depois criar Establishment com Category e Benefit existentes | Resolvido por D-048 |
 | P-024 | `Discount.value` e `Discount.description` são ambos obrigatórios? | Resolvido por D-047 | Fechado |
 | P-025 | Existem registros Catalog/Benefit no banco local que precisam ser preservados? | Na consulta anterior à V3, `establishment` e `benefit` tinham zero linhas; V3 foi aplicada no banco local. Em outro ambiente, consultar contagens e preparar conversão revisada antes de migrar se houver dados | Resolvido para o banco local; permanece como cautela para outras bases |
-| P-026 | Um Benefit pode ser associado a vários Establishments? | Não. D-050 confirma exclusividade; a legenda plural da tela precisa ser ajustada no cliente | Resolvido por D-050 |
+| P-026 | Um Benefit pode ser associado a vários Establishments? | Sim, conforme D-057; cada Establishment continua com exatamente um Benefit | Resolvido por D-057 |
 
 ## Registro de alteração
 
@@ -120,6 +121,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-20 | UUIDs existentes mantidos; Establishment terá exatamente um Benefit e Benefit terá um ou mais Discounts separados; Iconify, username atual e sigla UF permanecem | Usuário |
 | 2026-10-20 | Value e description de Discount são obrigatórios; benefício e descontos ficam na mesma tela; Establishment exige Category, Benefit e Discount | Usuário |
 | 2026-10-20 | Benefit é exclusivo de um único Establishment; pode existir sem vínculo até a criação do Establishment | Usuário |
+| 2026-10-26 | Um Benefit pode estar vinculado a vários Establishments; cada Establishment continua associado a um Benefit | Usuário; substitui a exclusividade anterior de D-050 |
 | 2026-10-21 | Contagem local anterior à V3 retornou zero em `establishment` e `benefit`; migração V3 aplicada com sucesso | Usuário informou as contagens; Flyway confirmou a aplicação |
 | 2026-10-23 | Dados podem permanecer offline sem prazo até a reconexão; visita após 3 minutos e chave idempotente por estabelecimento + timestamp UTC com janela de duplicidade de 30 minutos (D-051 a D-053). Resta definir o tratamento de pendências após desativação da conta (P-012) | Usuário |
 | 2026-10-23 | Conta desativada na reconexão: a API recusa sincronização; app informa e oferece apagar a fila local; não reatribuir operações a outra conta (D-054/P-012) | Usuário |

@@ -92,6 +92,8 @@ Criações individuais retornam `201 Created` com o objeto criado; atualizaçõe
 
 `POST /v1/admin/benefits` cadastra um benefício e seus descontos; não associa estabelecimento. Ele começa inativo e pode ser associado depois ao criar ou editar um estabelecimento.
 
+O mesmo benefício pode ser usado em vários estabelecimentos. Edições ou desativações feitas no benefício compartilhado se aplicam a todos os estabelecimentos associados.
+
 ```json
 {
   "audience": "Colaboradores WEG e familiares",
@@ -145,7 +147,7 @@ Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracter
 }
 ```
 
-Sucesso: `201 Created`, com um array de respostas na mesma ordem dos itens enviados. Cada benefício terá UUID, `active: false` e `establishmentId: null` até ser associado.
+Sucesso: `201 Created`, com um array de respostas na mesma ordem dos itens enviados. Cada benefício terá UUID, `active: false` e `establishmentCount: 0` até ser associado. As respostas dos endpoints administrativos de benefício informam `establishmentCount`, a quantidade de estabelecimentos associados.
 
 O lote é atômico: se qualquer item estiver inválido ou ocorrer erro ao salvar, a transação inteira é revertida e nenhum benefício do lote é mantido. A rota cria benefícios e descontos; ela **não** cria estabelecimentos nem categorias, não associa benefícios e não envia e-mail. O campo `conditions` não faz parte do contrato. Em erro, corrija o lote inteiro antes de reenviar. Após um timeout sem resposta, consulte `GET /v1/admin/benefits` para confirmar se o servidor concluiu a chamada antes de repeti-la; o endpoint não usa chave de idempotência.
 
@@ -189,7 +191,7 @@ Exemplo de `POST /v1/admin/establishments`:
 }
 ```
 
-Para criar estabelecimento, categoria ativa e benefício existente são obrigatórios; o benefício deve ter desconto e não pode estar vinculado a outro estabelecimento. `serviceIds` pode ser uma lista vazia. `facadeImageUrl` HTTPS e `altitude` são opcionais. O estado é a sigla de duas letras.
+Para criar estabelecimento, categoria ativa e benefício existente são obrigatórios; o benefício deve ter desconto e pode já estar associado a outros estabelecimentos. Cada estabelecimento mantém apenas um benefício, e o mesmo benefício pode ser compartilhado. `serviceIds` pode ser uma lista vazia. `facadeImageUrl` HTTPS e `altitude` são opcionais. O estado é a sigla de duas letras.
 
 ## Usuários: administração
 

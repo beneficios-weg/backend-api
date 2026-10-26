@@ -13,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -37,8 +36,8 @@ public class Benefit {
     @Column(nullable = false)
     private boolean active;
 
-    @OneToOne(mappedBy = "benefit", fetch = FetchType.LAZY)
-    private Establishment establishment;
+    @OneToMany(mappedBy = "benefit", fetch = FetchType.LAZY)
+    private List<Establishment> establishments = new ArrayList<>();
 
     @OneToMany(mappedBy = "benefit", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Discount> discounts = new ArrayList<>();
@@ -72,8 +71,9 @@ public class Benefit {
     }
 
     void linkTo(Establishment value) {
-        if (establishment != null && establishment != value) establishment.setBenefit(null);
-        establishment = value;
+        Benefit previous = value.getBenefit();
+        if (previous != null && previous != this) previous.unlinkFrom(value);
+        if (!establishments.contains(value)) establishments.add(value);
         value.setBenefit(this);
         if (firstLinkedAt == null) {
             firstLinkedAt = Instant.now();
@@ -82,8 +82,7 @@ public class Benefit {
     }
 
     void unlinkFrom(Establishment value) {
-        if (establishment == value) {
-            establishment = null;
+        if (establishments.remove(value) && value.getBenefit() == this) {
             value.setBenefit(null);
         }
     }
@@ -113,7 +112,7 @@ public class Benefit {
     public String getParticipationInstructions() { return participationInstructions; }
     public String getContact() { return contact; }
     public boolean isActive() { return active; }
-    public Establishment getEstablishment() { return establishment; }
+    public List<Establishment> getEstablishments() { return List.copyOf(establishments); }
     public List<Discount> getDiscounts() { return List.copyOf(discounts); }
     public Instant getFirstLinkedAt() { return firstLinkedAt; }
     public Instant getCreatedAt() { return createdAt; }

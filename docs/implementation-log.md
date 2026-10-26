@@ -397,3 +397,13 @@ Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justifica
 - **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V5 no banco nesta etapa.
 - **Limitações/riscos:** Ao aplicar V5 em qualquer ambiente, Flyway arquivará os textos de condições já existentes. Clientes antigos que enviem `conditions` precisam atualizar seus JSONs; esse campo já não integra o contrato novo.
 - **Próxima etapa:** Commitar e enviar a migração/remoção na branch da PR para `develop`; integrar a PR antes do redeploy para que Flyway aplique V5 no startup.
+
+### Compartilhamento de Benefit entre estabelecimentos — 2026-10-26
+
+- **Objetivo e estado:** Reverter a exclusividade de Benefit aprovada anteriormente. Cada Establishment continua exigindo um Benefit, e um Benefit pode ser usado por vários Establishments (D-057).
+- **Arquivos criados/alterados:** `AGENTS.md`, `Benefit.java`, `Establishment.java`, `BenefitRepository.java`, `CatalogDtos.java`, `CatalogService.java`, `V6__allow_shared_benefits.sql`, README da raiz das migrações e documentos ativos de modelo/contrato/decisões.
+- **Comportamento e contrato:** O vínculo JPA passa a ser `Establishment ManyToOne Benefit`; a validação que impedia compartilhar um Benefit foi removida. `BenefitResponse.establishmentId` é substituído por `establishmentCount`. V6 troca o índice único do FK por índice comum e preserva os vínculos já gravados.
+- **Decisões/divergências:** D-057 substitui D-050 quanto à exclusividade. Cada Establishment continua tendo exatamente um benefício. Clientes que leem `BenefitResponse.establishmentId` devem migrar para `establishmentCount`; `EstablishmentResponse.benefitId` permanece igual.
+- **Comandos e resultados:** `mvnw.cmd -B -DskipTests package`, com Microsoft JDK 25 e `--release 21`: `BUILD SUCCESS`; testes pulados. `git diff --check` passou. Não foi feito deploy nem aplicada a V6 ao banco nesta etapa.
+- **Limitações/riscos:** V6 precisa ser aplicada depois de V5 no próximo deploy; nenhuma migração foi aplicada ao Neon/local nesta alteração.
+- **Próxima etapa:** Integrar a PR #52 em `develop`; no redeploy, Flyway aplicará V6 após V5. Atualizar clientes que esperavam `BenefitResponse.establishmentId` para ler `establishmentCount` antes de depender da contagem de vínculos.

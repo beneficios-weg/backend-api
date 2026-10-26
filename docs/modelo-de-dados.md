@@ -14,18 +14,18 @@ O documento de referência [`WEG Benefits — Modelagem revisada`](referencia/WE
 - Ícone de Category selecionado entre opções oferecidas pelo próprio sistema.
 - Username descrito como texto de 3–75 caracteres com apenas letras minúsculas; Estado como texto de 2–75 caracteres.
 
-Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount); cada Establishment tem um único Benefit, e cada Benefit pode pertencer a no máximo um Establishment. Benefit pode ser cadastrado sem estabelecimento para seguir o fluxo da tela; o benefício começa inativo e ativa no primeiro vínculo. O usuário confirmou que benefício é exclusivo de um estabelecimento; a legenda plural “Estabelecimentos vinculados” do protótipo diverge dessa decisão e deve ser ajustada no cliente. Cada Benefit exige pelo menos um Discount; `value` e `description` são obrigatórios. Establishment exige Category ativa e Benefit existente com Discount. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF. A relação e o campo textual antigos são substituídos.
+Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo a nova entidade Discount). A regra confirmada depois é: cada Establishment tem exatamente um Benefit, e o mesmo Benefit pode pertencer a vários Establishments (D-057). Benefit pode ser cadastrado sem estabelecimento para seguir o fluxo da tela; começa inativo e ativa no primeiro vínculo. A revisão de 2026-10-26 substitui a exclusividade anterior de D-050 e a restrição legada da V3 por uma relação N:1. Cada Benefit exige pelo menos um Discount; `value` e `description` são obrigatórios. Establishment exige Category ativa e Benefit existente com Discount. Iconify permanece como fonte de ícones; username mantém D-022; Estado permanece como sigla UF.
 
 ### Estado implementado antes da reconciliação
 
 - A migração `V2__catalog.sql` define Category, Service, Establishment e Benefit com UUID e mantém o campo antigo `discount`.
-- A migração `V3__benefit_discounts_and_exclusive_establishment.sql` remove o campo antigo, cria `benefit_discount`, adiciona `establishment.benefit_id` obrigatório e único e registra `first_linked_at`. Benefit pode existir antes de qualquer estabelecimento; o FK obrigatório no lado Establishment garante a associação no banco. V3 aborta se encontrar qualquer linha em Establishment ou Benefit, pois não há mapeamento sem perda do desconto textual legado nem associação segura para dados existentes. Nenhuma migração já aplicada foi editada.
+- A migração `V3__benefit_discounts_and_exclusive_establishment.sql` criou o índice único histórico em `establishment.benefit_id`. A migração `V6__allow_shared_benefits.sql` remove esse índice único e cria um índice comum, preservando os vínculos existentes. V3 abortava se encontrasse linhas em Establishment ou Benefit, pois não havia mapeamento automático sem perda do desconto textual legado. Migrações aplicadas não são editadas.
 
 ## Catalog aprovado para a primeira versão
 
 - **Category:** identificador UUID gerado pelo sistema (D-042), nome (6–75 caracteres), identificador de ícone escolhido no Iconify, cor escolhida de uma paleta definida pelo projeto, estado ativo.
 - **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category ativa e exige um Benefit.
-- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e pelo menos um desconto são obrigatórios. Não tem nome/título nem condições (D-056). Cada Benefit pode estar sem estabelecimento antes da associação e fica exclusivo de um estabelecimento quando vinculado. Começa inativo e ativa no primeiro vínculo. Limites máximos de público e contato continuam pendentes (P-007).
+- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e pelo menos um desconto são obrigatórios. Não tem nome/título nem condições (D-056). Pode existir sem estabelecimento e pode ser compartilhado por vários Establishments. Começa inativo e ativa no primeiro vínculo. Limites máximos de público e contato continuam pendentes (P-007).
 - **Discount:** identificador UUID conforme o padrão confirmado para o catálogo; cada Discount pertence a exatamente um Benefit. Valor textual de 2–15 caracteres e descrição textual de 10–300 caracteres; a cardinalidade mínima de um por Benefit foi confirmada.
 - **Service:** identificador UUID; nome único (3–75); estado ativo. Establishment e Service têm relação muitos-para-muitos.
 
@@ -44,7 +44,7 @@ Category persiste a chave do ícone, por exemplo `mdi:store`, não uma URL de im
 
 ```text
 Category 1 ─── N Establishment
-Establishment (exige 1 Benefit) ─── (0..1 Establishment por Benefit) Benefit 1 ─── N Discount
+Establishment (exige 1 Benefit) N ─── 1 Benefit (0..N Establishments por Benefit) 1 ─── N Discount
 Establishment N ─── N Service
 ```
 
