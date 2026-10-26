@@ -1,7 +1,7 @@
 # Relatório de integração entre WEG Benefits, Mobile e localização
 
-**Data da análise:** 2026-10-26  
-**Estado:** relatório técnico e proposta; não implementa integração com Geoapify nem altera o contrato da API.  
+**Data da análise:** 2026-10-26
+**Estado:** relatório técnico e proposta; não implementa integração com Geoapify nem altera o contrato da API.
 **Para levar a outra máquina:** este documento reúne o contexto funcional e técnico necessário para retomar o trabalho sem esta conversa. As referências de API ativas são `../AGENTS.md`, `../README.md`, `api-contract.md` e `http-api.md`; os documentos herdados listados no índice podem conter decisões antigas.
 
 ## 1. Recomendação
