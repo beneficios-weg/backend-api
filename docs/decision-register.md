@@ -21,18 +21,18 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-013 | Após o ADMIN criar a conta, o sistema enviará automaticamente as credenciais (usuário e senha) ao endereço de e-mail cadastrado para o usuário | Confirmada pelo usuário |
 | D-014 | Login aceita nome de usuário único ou e-mail, sempre com senha | Confirmada pelo usuário; regras de normalização registradas em D-020 e D-022 |
 | D-015 | Se o envio das credenciais falhar, o ADMIN receberá um aviso dentro do sistema | Confirmada pelo usuário |
-| D-016 | É permitido usar um serviço externo gratuito para envio de e-mail; não é necessário ter provedor próprio | Confirmada como permissão geral; para esta aplicação foi escolhido SMTP da própria conta Gmail (D-027) |
+| D-016 | É permitido usar um serviço externo gratuito para envio de e-mail; não é necessário ter provedor próprio | Confirmada; Gmail API escolhida para esta aplicação (D-027) |
 | D-017 | Campos de usuário: ID inteiro único; username único de 3 a 75 caracteres; e-mail obrigatório, válido e único; senha armazenada somente como hash seguro; `Ativo` booleano; datas de criação e atualização | Confirmada; detalhes estão refinados em D-020, D-022 a D-024 |
 | D-018 | Os únicos papéis são `ADMIN` e `COLLABORATOR`. ADMIN pode criar outros ADMINs, editar qualquer conta (inclusive a própria e outras ADMIN), usar favoritos/visitas próprios e desativar apenas COLLABORATOR; nunca desativa ADMIN nem a própria conta | Confirmada pelo usuário; mudança de papel detalhada em D-028 |
-| D-019 | O CLI de provisionamento inicial cria o primeiro ADMIN ativo, com papel fixo ADMIN; recebe username, e-mail e senha, gera o ID e timestamps automaticamente e envia login/senha ao e-mail informado | Confirmada pelo usuário; envio SMTP Gmail com senha de app (D-027); senha solicitada em prompt sem eco e fora de argumentos/logs (D-030) |
+| D-019 | O CLI de provisionamento inicial cria o primeiro ADMIN ativo, com papel fixo ADMIN; recebe username, e-mail e senha, gera o ID e timestamps automaticamente e envia login/senha ao e-mail informado | Confirmada pelo usuário; envio via Gmail API (D-027); senha solicitada em prompt sem eco e fora de argumentos/logs (D-030) |
 | D-020 | Os únicos domínios aceitos para e-mail de usuário são `gmail.com` e `estudante.sesisenai.org.br` | Confirmada pelo usuário; armazenar e comparar endereço normalizado |
-| D-021 | O endereço remetente das mensagens será `wegbenefits@gmail.com` | Confirmada pelo usuário; integração/autenticação com Google ainda precisa ser escolhida e configurada fora do código-fonte |
+| D-021 | O endereço remetente das mensagens será `wegbenefits@gmail.com` | Confirmada pelo usuário; deve corresponder à conta Google que autorizou a Gmail API |
 | D-022 | Username aceita somente ASCII minúsculo `a-z`, dígitos e `.`, `-`, `_`, entre 3 e 75 caracteres; remover espaços externos e normalizar para minúsculo antes da unicidade | Confirmada pelo usuário |
 | D-023 | ID de usuário é inteiro gerado pelo banco; timestamps de criação/atualização são gerados pelo sistema; novas contas criadas no painel são ativas e têm papel padrão COLLABORATOR | Confirmada pelo usuário; a criação de ADMIN por outro ADMIN continua permitida conforme D-018 |
 | D-024 | A senha terá de 6 a 72 caracteres, aceitando qualquer caractere sem normalização | Confirmada pelo usuário. Seis caracteres é um mínimo fraco para conta comum e deve ser reavaliado se o escopo permitir |
 | D-025 | Autenticação usará sessão mantida no servidor, persistida no PostgreSQL, com cookie `HttpOnly` persistente e sem expiração automática; logout invalida sessão | Confirmada pelo usuário; desativação/revogação também encerram acesso |
-| D-026 | A conta só será criada se o Gmail aceitar o envio SMTP das credenciais; uma rejeição/erro significa que não haverá conta e o ADMIN será avisado. A aceitação SMTP conta como sucesso, mesmo que ocorra bounce posterior | Confirmada pelo usuário; um bounce posterior não desfaz a conta |
-| D-027 | Envio de e-mail será por SMTP do Gmail usando senha de app da conta `wegbenefits@gmail.com` | Confirmada pelo usuário; exige verificação em duas etapas e armazenamento do segredo fora do código/repositório |
+| D-026 | A conta só será criada se a Gmail API aceitar o envio das credenciais; uma rejeição/erro significa que não haverá conta e o ADMIN será avisado. Resposta de sucesso da API conta como aceitação, mesmo que ocorra bounce posterior | Confirmada pelo usuário; um bounce posterior não desfaz a conta |
+| D-027 | Envio de e-mail será pela Gmail API, autorizado por OAuth 2.0 com o escopo `gmail.send`, usando a conta `wegbenefits@gmail.com` | Escolha confirmada pelo usuário em 2026-10-26; client secret e refresh token ficam fora do código/repositório. App em Testing tem refresh token com validade limitada a sete dias; publicar não substitui a verificação Google aplicável |
 | D-028 | ADMIN pode promover uma conta COLLABORATOR para ADMIN; não pode rebaixar uma conta ADMIN. COLLABORATOR não altera papéis | Confirmada pelo usuário |
 | D-029 | O limite máximo de senha será 72 caracteres | Confirmada pelo usuário; mínimo de 6 já consta em D-024 |
 | D-030 | O CLI coleta a senha por prompt interativo sem eco; senha não deve ser passada como argumento nem registrada em logs | Confirmada pelo usuário como abordagem aceitável |
@@ -106,7 +106,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | 2026-10-16 | ADMIN pode criar ADMINs, editar sua própria conta e outras contas ADMIN e usar favoritos/visitas; novos usuários são ativos COLLABORATOR por padrão; e-mails ficam limitados aos dois domínios declarados | Usuário |
 | 2026-10-16 | Username ASCII minúsculo com normalização; senha com mínimo de 6; ID e timestamps gerados pelo sistema; CLI usa os defaults de primeiro ADMIN; autenticação por sessão server-side/cookie | Usuário |
 | 2026-10-16 | Não criar a conta quando o serviço de e-mail rejeitar/falhar no envio; criar somente após o envio funcionar | Usuário |
-| 2026-10-19 | SMTP do Gmail com senha de app; aceitação SMTP conta como sucesso, ainda que haja bounce posterior | Usuário |
+| 2026-10-19 | SMTP do Gmail com senha de app; aceitação SMTP conta como sucesso, ainda que haja bounce posterior | Decisão histórica, substituída pela escolha da Gmail API de 2026-10-26 |
+| 2026-10-26 | Substituir SMTP por Gmail API com OAuth 2.0 e escopo `gmail.send`; resposta de sucesso da API é o critério de aceitação para criação da conta | Usuário |
 | 2026-10-19 | Senha de 6 a 72 caracteres; ADMIN pode promover COLLABORATOR, mas não rebaixar ADMIN; CLI solicita senha sem eco | Usuário |
 | 2026-10-19 | Preferência por sessão longa; propostas de 30 dias inativa/90 dias máximo e de CSRF/CORS registradas para avaliação, ainda não aprovadas | Usuário (preferência); proposta do assistente |
 | 2026-10-19 | Sessão sem expiração automática e persistida no PostgreSQL; senha aceita qualquer caractere; sem fluxo CSRF dedicado nesta atividade; CORS adicional apenas se o desktop web for cross-origin | Usuário |
@@ -123,7 +124,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 
 ## Pontos de implementação pendentes
 
-- As decisões de produto Identity estão fechadas para esta atividade, inclusive a rota D-035. Antes de exposição pública, reavaliar sessão sem expiração, ausência de fluxo CSRF dedicado e envio de senha reutilizável por e-mail. SMTP exige verificação em duas etapas e segredo fora do código/repositório. Confirmar a origem/tipo do cliente desktop antes da integração cross-origin; origens devem continuar explícitas e sem wildcard.
+- As decisões de produto Identity estão fechadas para esta atividade, inclusive a rota D-035. Antes de exposição pública, reavaliar sessão sem expiração, ausência de fluxo CSRF dedicado e envio de senha reutilizável por e-mail. A implantação precisa configurar os segredos OAuth Gmail fora do repositório; tokens concedidos com o app em Testing expiram em sete dias para `gmail.send`. Confirmar a origem/tipo do cliente desktop antes da integração cross-origin; origens devem continuar explícitas e sem wildcard.
 
 ## Divergências documentais preservadas
 
