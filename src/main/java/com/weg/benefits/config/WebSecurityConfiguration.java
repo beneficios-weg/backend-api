@@ -44,7 +44,8 @@ public class WebSecurityConfiguration {
                                 problemWriter.write(request, response, 403, "Acesso negado",
                                         "Você não tem permissão para acessar este recurso.")))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/v1/auth/login", "/v1/auth/logout", "/actuator/health", "/v1/api-docs/**",
+                        .requestMatchers("/v1/auth/login", "/v1/auth/logout", "/actuator/health",
+                                "/actuator/health/**", "/v1/api-docs/**",
                                 "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers("/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
