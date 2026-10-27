@@ -35,9 +35,11 @@ public class CatalogReadController {
     public PageResponse<EstablishmentResponse> establishments(@RequestParam(required = false) String query,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) UUID serviceId,
+            @RequestParam(required = false) EstablishmentChannel channel,
+            @RequestParam(defaultValue = "false") boolean forMap,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return catalog.searchEstablishments(query, categoryId, serviceId, page, size);
+        return catalog.searchEstablishments(query, categoryId, serviceId, channel, forMap, page, size);
     }
 
     @GetMapping("/establishments/{id}")

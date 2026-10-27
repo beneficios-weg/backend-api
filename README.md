@@ -141,6 +141,8 @@ Only Actuator health is exposed. Health responses do not include component detai
 are not checked by the health endpoint. Flyway V1 creates Identity and PostgreSQL-backed sessions;
 V2/V3 create Catalog; V4 creates favorites and visits; V5 removes the obsolete Benefit conditions
 field and archives existing values internally; V6 allows multiple establishments to share a Benefit.
+V7 preserves literal source text in required TEXT columns, and V8 adds PHYSICAL/ONLINE/HYBRID
+establishment channels. Existing establishments remain PHYSICAL with their addresses and links intact.
 V3 aborts startup if the database has legacy rows in
 `establishment` or `benefit`; inspect and map those records before applying that migration.
 
@@ -154,3 +156,13 @@ V3 aborts startup if the database has legacy rows in
 
 There is no public account registration or password reset. Catalog, Identity and Engagement routes,
 including which are implemented, are listed in [docs/api-contract.md](docs/api-contract.md).
+
+## Online partners and catalog load
+
+Establishments default to `PHYSICAL`. `ONLINE` partners require no address or coordinates;
+`HYBRID` partners require a complete physical location. Responses include `channel` and `mappable`.
+Mobile map queries must use `GET /v1/establishments?forMap=true`; the regular list includes online
+partners. Instructions and descriptions retain literal text, including short/long source passages.
+
+See [the catalog load guide](docs/carga-catalogo.md) for offline payload preparation, real UUID mapping,
+pending address reviews and PostgreSQL integration-test commands. Preparation does not import data.

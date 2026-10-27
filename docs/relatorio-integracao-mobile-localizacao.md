@@ -6,6 +6,13 @@
 
 ## 1. Recomendação
 
+**Atualização do contrato — 2026-10-27:** a API agora retorna `channel` (PHYSICAL/ONLINE/HYBRID)
+e `mappable` em Establishment. ONLINE não possui endereço/coordenadas; cidade/UF podem ser nulas
+inclusive em favoritos. Listas comuns incluem online; alimentar o mapa com `forMap=true` ou filtrar
+`mappable=true` no cache offline. Não enviar visitas presenciais para ONLINE (400). Instruções e
+descrições mantêm texto literal sem limites artificiais; não truncar no cliente. A adaptação da tela,
+serviços e cache Mobile deve ocorrer no repositório do cliente. Ver [guia atualizado](carga-catalogo.md).
+
 **Geoapify é adequada e a recomendação é usá-la para geocodificação de endereços do catálogo.** A API converte um endereço em coordenadas, aceita busca textual ou campos separados, permite limitar a busca ao Brasil e retorna níveis de confiança que ajudam a revisar se o ponto corresponde ao estabelecimento. O plano gratuito informa 3.000 créditos por dia, sem cartão, e pode ser usado em produção dentro dos limites e com as atribuições exigidas. Uma requisição simples de geocodificação custa normalmente um crédito. [Documentação de geocodificação](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/), [preços e uso gratuito](https://www.geoapify.com/pricing/)
 
 Para o escopo e a infraestrutura atuais, a menor integração segura é:
@@ -257,7 +264,7 @@ Não são bloqueios para o relatório ou para preparar coordenadas manualmente, 
 
 ## 9. Estado da decisão
 
-- **Avaliação Geoapify:** adequada para geocodificação; recomendada inicialmente para enriquecimento manual/revisado de catálogo. Provedor escolhido para produção ainda não foi aprovado explicitamente.
+- **Avaliação Geoapify:** aprovada para geocodificar endereços de estabelecimentos e apoiar o preenchimento/revisão de coordenadas (D-059). O uso deve manter chave fora do Mobile e exigir conferência antes de persistir. A decisão não seleciona Geoapify para localização pessoal, tiles ou roteamento, nem implementa chamada no backend.
 - **Localização em segundo plano:** propriedade do Mobile e de APIs nativas; o Backend já está definido para receber apenas eventos finais.
 - **Regra confirmada:** visita após 3 minutos; sincronização offline até reconectar; sem reatribuir fila a outra conta.
 - **Fora do relatório/sem implementação:** integração de código Geoapify, endpoint novo, PostGIS, mudança de tiles, roteamento de produção, alteração de contrato, deploy e migrações.

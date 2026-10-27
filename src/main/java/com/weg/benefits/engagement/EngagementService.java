@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.weg.benefits.catalog.CatalogService;
 import com.weg.benefits.catalog.Establishment;
+import com.weg.benefits.catalog.EstablishmentChannel;
 import com.weg.benefits.identity.AppUser;
 import com.weg.benefits.identity.IdentityService;
 import com.weg.benefits.engagement.EngagementDtos.FavoriteResponse;
@@ -72,6 +73,10 @@ public class EngagementService {
     public VisitSubmission recordVisit(Integer userId, VisitCreateRequest request) {
         AppUser owner = identity.lockActiveUserForEngagement(userId);
         Establishment establishment = catalog.requireExistingEstablishmentForEngagement(request.establishmentId());
+        if (establishment.getChannel() == EstablishmentChannel.ONLINE) {
+            throw new EngagementException(HttpStatus.BAD_REQUEST, "Visita indisponível",
+                    "Parceiro exclusivamente online não possui local físico para registrar visita.");
+        }
         Instant occurredAt = request.occurredAt();
         Instant from;
         Instant to;

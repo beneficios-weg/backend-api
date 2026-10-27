@@ -27,7 +27,7 @@ public class Benefit {
     @Column(name = "audience", nullable = false, columnDefinition = "text")
     private String audience;
 
-    @Column(name = "participation_instructions", nullable = false, length = 300)
+    @Column(name = "participation_instructions", nullable = false, columnDefinition = "text")
     private String participationInstructions;
 
     @Column(nullable = false, columnDefinition = "text")

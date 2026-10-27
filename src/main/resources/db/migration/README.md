@@ -7,5 +7,8 @@ map such data before applying V3. `V4__engagement_favorites_and_visits.sql` crea
 favorite and visit records. `V5__remove_benefit_conditions.sql` archives existing Benefit condition
 text and removes the field from the Benefit table. `V6__allow_shared_benefits.sql` removes the unique
 constraint on `establishment.benefit_id` so multiple establishments can reference the same Benefit.
+`V7__preserve_catalog_source_text.sql` widens required source-text fields without changing values.
+`V8__online_establishment_channels.sql` adds PHYSICAL/ONLINE/HYBRID with conditional location
+constraints; existing establishments remain PHYSICAL with their coordinates and relationships.
 Add new migrations for later modules; never edit a migration after it has been applied to a shared
 database.

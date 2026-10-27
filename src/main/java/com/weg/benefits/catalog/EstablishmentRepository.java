@@ -12,16 +12,20 @@ public interface EstablishmentRepository extends JpaRepository<Establishment, ja
     @Query("""
             select distinct e from Establishment e
             where e.active = true and e.category.active = true
+              and (:channel is null or e.channel = :channel)
+              and (:forMap = false or (e.channel <> com.weg.benefits.catalog.EstablishmentChannel.ONLINE
+                   and e.latitude is not null and e.longitude is not null))
               and (:categoryId is null or e.category.id = :categoryId)
               and (:serviceId is null or exists (
                   select s.id from Establishment linked join linked.services s
                   where linked.id = e.id and s.id = :serviceId and s.active = true))
-              and (:query is null or lower(e.name) like lower(concat('%', :query, '%'))
-                   or lower(e.description) like lower(concat('%', :query, '%')))
+              and (:query = '' or lower(e.name) like concat('%', lower(:query), '%')
+                   or lower(e.description) like concat('%', lower(:query), '%'))
             """)
     Page<Establishment> searchActive(@Param("query") String query,
             @Param("categoryId") java.util.UUID categoryId,
             @Param("serviceId") java.util.UUID serviceId,
+            @Param("channel") EstablishmentChannel channel, @Param("forMap") boolean forMap,
             Pageable pageable);
 
     @Query("select e from Establishment e where e.id = :id and e.active = true and e.category.active = true")

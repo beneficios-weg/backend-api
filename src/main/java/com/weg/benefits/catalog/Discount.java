@@ -22,7 +22,7 @@ public class Discount {
     @Column(nullable = false, length = 15)
     private String value;
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false, columnDefinition = "text")
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

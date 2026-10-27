@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,6 +21,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "establishment")
@@ -27,38 +31,43 @@ public class Establishment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 75)
+    @Column(nullable = false, columnDefinition = "text")
     private String name;
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false, columnDefinition = "text")
     private String description;
 
-    @Column(name = "postal_code", nullable = false, length = 8)
+    @Column(name = "postal_code", length = 8)
     private String postalCode;
 
-    @Column(name = "street_number", nullable = false)
+    @Column(name = "street_number")
     private Integer streetNumber;
 
-    @Column(nullable = false, length = 75)
+    @Column(length = 75)
     private String street;
 
-    @Column(nullable = false, length = 75)
+    @Column(length = 75)
     private String district;
 
-    @Column(nullable = false, length = 75)
+    @Column(length = 75)
     private String city;
 
-    @Column(nullable = false, length = 2)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(length = 2, columnDefinition = "char(2)")
     private String state;
 
-    @Column(nullable = false, precision = 9, scale = 6)
+    @Column(precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(nullable = false, precision = 9, scale = 6)
+    @Column(precision = 9, scale = 6)
     private BigDecimal longitude;
 
     @Column(precision = 9, scale = 2)
     private BigDecimal altitude;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private EstablishmentChannel channel = EstablishmentChannel.PHYSICAL;
 
     @Column(name = "facade_image_url", length = 2048)
     private String facadeImageUrl;
@@ -91,7 +100,7 @@ public class Establishment {
     Establishment(String name, String description, String postalCode, Integer streetNumber,
             String street, String district, String city, String state, BigDecimal latitude,
             BigDecimal longitude, BigDecimal altitude, String facadeImageUrl,
-            Category category, Set<ServiceOption> services) {
+            Category category, Set<ServiceOption> services, EstablishmentChannel channel) {
         this.name = name;
         this.description = description;
         this.postalCode = postalCode;
@@ -106,12 +115,13 @@ public class Establishment {
         this.facadeImageUrl = facadeImageUrl;
         this.category = category;
         this.services = new HashSet<>(services);
+        this.channel = channel;
     }
 
     void update(String name, String description, String postalCode, Integer streetNumber,
             String street, String district, String city, String state, BigDecimal latitude,
             BigDecimal longitude, BigDecimal altitude, String facadeImageUrl,
-            Category category, Set<ServiceOption> services, Boolean active) {
+            Category category, Set<ServiceOption> services, Boolean active, EstablishmentChannel channel) {
         if (name != null) this.name = name;
         if (description != null) this.description = description;
         if (postalCode != null) this.postalCode = postalCode;
@@ -127,6 +137,18 @@ public class Establishment {
         if (category != null) this.category = category;
         if (services != null) this.services = new HashSet<>(services);
         if (active != null) this.active = active;
+        if (channel != null) this.channel = channel;
+        if (this.channel == EstablishmentChannel.ONLINE) {
+            this.postalCode = null;
+            this.streetNumber = null;
+            this.street = null;
+            this.district = null;
+            this.city = null;
+            this.state = null;
+            this.latitude = null;
+            this.longitude = null;
+            this.altitude = null;
+        }
     }
 
     void deactivate() { active = false; }
@@ -157,6 +179,10 @@ public class Establishment {
     public BigDecimal getLatitude() { return latitude; }
     public BigDecimal getLongitude() { return longitude; }
     public BigDecimal getAltitude() { return altitude; }
+    public EstablishmentChannel getChannel() { return channel; }
+    public boolean isMappable() {
+        return channel != EstablishmentChannel.ONLINE && latitude != null && longitude != null;
+    }
     public String getFacadeImageUrl() { return facadeImageUrl; }
     public boolean isActive() { return active; }
     public Category getCategory() { return category; }
