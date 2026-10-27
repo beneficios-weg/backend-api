@@ -29,6 +29,7 @@ registro de decisões.
 - `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
 - [`http-api.md`](http-api.md): referência prática das rotas HTTP implementadas, autenticação, payloads e exemplos JSON; inclui cadastro em lote dos recursos do Catalog.
 - [`relatorio-integracao-mobile-localizacao.md`](relatorio-integracao-mobile-localizacao.md): relatório independente da integração API–Mobile, avaliação da Geoapify, contrato atual de catálogo/visitas e proposta de localização em foreground/background.
+- [`geocodificacao-catalogo.md`](geocodificacao-catalogo.md): resultado das consultas Geoapify para os 18 estabelecimentos da carga, sugestões de pontos, links de conferência e divergências pendentes; nenhuma unidade está aprovada para importação automaticamente.
 - `implementation-log.md`: estado real das etapas, baseado em mudanças e validações efetivamente realizadas.
 - [`modelo-de-dados.md`](modelo-de-dados.md): modelo aprovado atualmente e divergências da revisão mais recente em reconciliação.
 - [`referencia/WEG-Benefits-Modelagem-revisada.pdf`](referencia/WEG-Benefits-Modelagem-revisada.pdf): PDF de modelagem recebido em 2026-10-20, preservado como material de referência; consulte o registro de decisões para conflitos pendentes.
