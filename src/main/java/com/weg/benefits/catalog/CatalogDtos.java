@@ -44,28 +44,29 @@ public final class CatalogDtos {
     }
 
     public record EstablishmentCreateRequest(
-            @NotBlank @Size(min = 2, max = 75) String name,
-            @NotBlank @Size(min = 50, max = 300) String description,
-            @NotBlank @Pattern(regexp = "[0-9]{8}") String postalCode,
-            @NotNull @PositiveOrZero Integer streetNumber,
-            @NotBlank @Size(min = 3, max = 75) String street,
-            @NotBlank @Size(min = 3, max = 75) String district,
-            @NotBlank @Size(min = 3, max = 75) String city,
-            @NotBlank @Pattern(regexp = "[A-Za-z]{2}") String state,
-            @NotNull @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
-            @NotNull @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
+            @NotBlank @Size(min = 2) String name,
+            @NotBlank String description,
+            @Pattern(regexp = "[0-9]{8}") String postalCode,
+            @PositiveOrZero Integer streetNumber,
+            @Size(min = 3, max = 75) String street,
+            @Size(min = 3, max = 75) String district,
+            @Size(min = 3, max = 75) String city,
+            @Pattern(regexp = "[A-Za-z]{2}") String state,
+            @DecimalMin("-90.0") @DecimalMax("90.0") BigDecimal latitude,
+            @DecimalMin("-180.0") @DecimalMax("180.0") BigDecimal longitude,
             BigDecimal altitude,
             @Size(max = 2048) String facadeImageUrl,
             @NotNull UUID categoryId,
             @NotNull UUID benefitId,
-            List<@NotNull UUID> serviceIds) { }
+            List<@NotNull UUID> serviceIds,
+            EstablishmentChannel channel) { }
 
     public record EstablishmentBatchCreateRequest(
             @NotEmpty @Size(max = 100) List<@NotNull @Valid EstablishmentCreateRequest> establishments) { }
 
     public record EstablishmentPatchRequest(
-            @Size(min = 2, max = 75) String name,
-            @Size(min = 50, max = 300) String description,
+            @Size(min = 2) String name,
+            String description,
             @Pattern(regexp = "[0-9]{8}") String postalCode,
             @PositiveOrZero Integer streetNumber,
             @Size(min = 3, max = 75) String street,
@@ -80,19 +81,20 @@ public final class CatalogDtos {
             UUID categoryId,
             UUID benefitId,
             List<@NotNull UUID> serviceIds,
-            Boolean active) {
+            Boolean active,
+            EstablishmentChannel channel) {
         boolean hasChanges() {
             return name != null || description != null || postalCode != null || streetNumber != null
                     || street != null || district != null || city != null || state != null
                     || latitude != null || longitude != null || altitude != null
                     || facadeImageUrl != null || Boolean.TRUE.equals(clearFacadeImageUrl)
-                    || categoryId != null || benefitId != null || serviceIds != null || active != null;
+                    || categoryId != null || benefitId != null || serviceIds != null || active != null || channel != null;
         }
     }
 
     public record DiscountInput(
             @NotBlank @Size(min = 2, max = 15) String value,
-            @NotBlank @Size(min = 10, max = 300) String description) { }
+            @NotBlank String description) { }
 
     public record DiscountResponse(UUID id, String value, String description) {
         static DiscountResponse from(Discount value) {
@@ -102,7 +104,7 @@ public final class CatalogDtos {
 
     public record BenefitCreateRequest(
             @NotBlank String audience,
-            @NotBlank @Size(min = 50, max = 300) String participationInstructions,
+            @NotBlank String participationInstructions,
             @NotBlank String contact,
             @NotEmpty List<@NotNull @Valid DiscountInput> discounts) { }
 
@@ -111,7 +113,7 @@ public final class CatalogDtos {
 
     public record BenefitPatchRequest(
             String audience,
-            @Size(min = 50, max = 300) String participationInstructions,
+            String participationInstructions,
             String contact,
             List<@NotNull @Valid DiscountInput> discounts,
             Boolean active) {
@@ -139,7 +141,8 @@ public final class CatalogDtos {
     public record EstablishmentResponse(UUID id, String name, String description, String postalCode,
             Integer streetNumber, String street, String district, String city, String state,
             BigDecimal latitude, BigDecimal longitude, BigDecimal altitude, String facadeImageUrl,
-            CategoryResponse category, UUID benefitId, List<ServiceResponse> services, boolean active,
+            CategoryResponse category, UUID benefitId, List<ServiceResponse> services,
+            EstablishmentChannel channel, boolean mappable, boolean active,
             Instant createdAt, Instant updatedAt) {
         static EstablishmentResponse from(Establishment value) {
             return new EstablishmentResponse(value.getId(), value.getName(), value.getDescription(),
@@ -149,7 +152,8 @@ public final class CatalogDtos {
                     value.getBenefit() == null ? null : value.getBenefit().getId(),
                     value.getServices().stream().filter(ServiceOption::isActive)
                             .sorted(java.util.Comparator.comparing(ServiceOption::getName))
-                            .map(ServiceResponse::from).toList(), value.isActive(), value.getCreatedAt(),
+                            .map(ServiceResponse::from).toList(), value.getChannel(), value.isMappable(),
+                    value.isActive(), value.getCreatedAt(),
                     value.getUpdatedAt());
         }
     }

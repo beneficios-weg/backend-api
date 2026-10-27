@@ -2,7 +2,8 @@
 
 ## Estado
 
-Este documento registra as decisões de modelagem e distingue o projeto aprovado do que o código já implementa. A reconciliação foi implementada em código e na migração V3; a migração não foi executada neste trabalho.
+Este documento registra as decisões de modelagem e o estado implementado até V8. As migrações
+foram verificadas em PostgreSQL temporário; nesta etapa não houve migração no ambiente hospedado.
 
 ## Revisão recebida em 2026-10-20 — decisões reconciliadas
 
@@ -24,9 +25,9 @@ Decisões da equipe após a revisão: IDs do catálogo continuam UUID (incluindo
 ## Catalog aprovado para a primeira versão
 
 - **Category:** identificador UUID gerado pelo sistema (D-042), nome (6–75 caracteres), identificador de ícone escolhido no Iconify, cor escolhida de uma paleta definida pelo projeto, estado ativo.
-- **Establishment:** identificador UUID; nome (2–75); descrição (50–300); endereço (CEP, número, rua, bairro, cidade e sigla UF); latitude/longitude e altitude conforme a modelagem revisada; URL HTTPS opcional da fachada; estado ativo; pertence a uma Category ativa e exige um Benefit.
-- **Benefit:** identificador UUID; público, instruções de participação (50–300), contato e pelo menos um desconto são obrigatórios. Não tem nome/título nem condições (D-056). Pode existir sem estabelecimento e pode ser compartilhado por vários Establishments. Começa inativo e ativa no primeiro vínculo. Limites máximos de público e contato continuam pendentes (P-007).
-- **Discount:** identificador UUID conforme o padrão confirmado para o catálogo; cada Discount pertence a exatamente um Benefit. Valor textual de 2–15 caracteres e descrição textual de 10–300 caracteres; a cardinalidade mínima de um por Benefit foi confirmada.
+- **Establishment:** identificador UUID; nome (mínimo 2, TEXT); descrição obrigatória/não vazia (TEXT); canal PHYSICAL (padrão), ONLINE ou HYBRID. Físico/híbrido exigem CEP, número, rua, bairro, cidade, UF e latitude/longitude; altitude opcional. Online exige localização ausente. URL HTTPS opcional da fachada; estado ativo; Category ativa e exatamente um Benefit. `mappable` é calculado, não coluna.
+- **Benefit:** identificador UUID; público, instruções de participação, contato e pelo menos um desconto são obrigatórios, com campos textuais sem limite de domínio. Não tem nome/título nem condições (D-056). Pode existir sem estabelecimento e pode ser compartilhado por vários Establishments. Começa inativo e ativa no primeiro vínculo, inclusive com parceiro ONLINE; desativação manual permanece.
+- **Discount:** identificador UUID; cada Discount pertence a exatamente um Benefit. Valor textual de 2–15 caracteres e descrição obrigatória/não vazia (TEXT), preservada literalmente; a cardinalidade mínima é um por Benefit.
 - **Service:** identificador UUID; nome único (3–75); estado ativo. Establishment e Service têm relação muitos-para-muitos.
 
 As linhas inativas são preservadas e excluídas das consultas normais do catálogo. Não há exclusão física de estabelecimentos, benefícios, categorias ou serviços nesta etapa. Os vínculos históricos devem permanecer íntegros.
@@ -48,7 +49,9 @@ Establishment (exige 1 Benefit) N ─── 1 Benefit (0..N Establishments por B
 Establishment N ─── N Service
 ```
 
-Favoritos e visitas pertencem ao módulo Engagement, ainda não implementado. Quando introduzidos, referências históricas devem continuar apontando para estabelecimentos desativados; a política de reenvio offline de visita será fechada antes de Engagement.
+Favoritos e visitas pertencem ao módulo Engagement implementado. Referências históricas permanecem
+íntegras na desativação ou mudança de canal. Parceiros ONLINE podem ser favoritados e não recebem
+novas visitas presenciais. V7 amplia textos; V8 mantém registros existentes como PHYSICAL sem apagar localização.
 
 ## Fora do escopo ou ainda pendente
 

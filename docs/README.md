@@ -24,13 +24,15 @@ registro de decisões.
 
 ## Documentos
 
+- [`carga-catalogo.md`](carga-catalogo.md): canais físico/online/híbrido, preservação literal, preparador de lotes e testes isolados com PostgreSQL.
+
 - `implementation-plan.md`: arquitetura proposta, módulos, ordem, entregas e critérios de conclusão.
 - `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
 - `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
 - [`http-api.md`](http-api.md): referência prática das rotas HTTP implementadas, autenticação, payloads e exemplos JSON; inclui cadastro em lote dos recursos do Catalog.
 - [`relatorio-integracao-mobile-localizacao.md`](relatorio-integracao-mobile-localizacao.md): relatório independente da integração API–Mobile, avaliação da Geoapify, contrato atual de catálogo/visitas e proposta de localização em foreground/background.
 - [`geocodificacao-catalogo.md`](geocodificacao-catalogo.md): consultas Geoapify, 13 coordenadas confirmadas pelo usuário, 3 casos adiados, vínculos dos 18 estabelecimentos/benefícios da carga e divergências ainda pendentes para importação.
-- [`revisao-beneficios-pdf.md`](revisao-beneficios-pdf.md): 112 ofertas com escrita da fonte, correção da atribuição da Care, 20 pontos aprovados e decisão de ofertas online; pacote fiel substitui os lotes normalizados, com incompatibilidades do DTO explicitadas.
+- [`revisao-beneficios-pdf.md`](revisao-beneficios-pdf.md): 112 ofertas com escrita da fonte, correção da Care e 20 pontos aprovados; API V8 aceita os textos literais e canais online, com pendências de unidades/UUIDs explícitas.
 - `implementation-log.md`: estado real das etapas, baseado em mudanças e validações efetivamente realizadas.
 - [`modelo-de-dados.md`](modelo-de-dados.md): modelo aprovado atualmente e divergências da revisão mais recente em reconciliação.
 - [`referencia/WEG-Benefits-Modelagem-revisada.pdf`](referencia/WEG-Benefits-Modelagem-revisada.pdf): PDF de modelagem recebido em 2026-10-20, preservado como material de referência; consulte o registro de decisões para conflitos pendentes.

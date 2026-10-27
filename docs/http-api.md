@@ -69,7 +69,7 @@ Todas as rotas abaixo exigem sessão. Os itens desativados não aparecem nas con
 | `GET` | `/v1/categories/options` | — | Paleta de cores e provedor de busca de ícones |
 | `GET` | `/v1/categories` | `page`, `size` | Categorias ativas, paginadas |
 | `GET` | `/v1/services` | `page`, `size` | Serviços ativos, paginados |
-| `GET` | `/v1/establishments` | `query`, `categoryId`, `serviceId`, `page`, `size` | Estabelecimentos ativos, paginados |
+| `GET` | `/v1/establishments` | `query`, `categoryId`, `serviceId`, `channel`, `forMap`, `page`, `size` | Parceiros ativos, paginados; lista inclui online |
 | `GET` | `/v1/establishments/{id}` | UUID em `id` | Detalhe do estabelecimento ativo |
 | `GET` | `/v1/establishments/{id}/benefits` | `page`, `size` | Benefícios ativos do estabelecimento |
 
@@ -142,7 +142,7 @@ O mesmo benefício pode ser usado em vários estabelecimentos. Edições ou desa
 }
 ```
 
-Campos obrigatórios: `audience`, `participationInstructions` (50–300 caracteres), `contact` e pelo menos um `discount`. Cada desconto exige `value` (2–15) e `description` (10–300). O benefício não tem nome, título ou atributo de condições.
+Campos obrigatórios: `audience`, `participationInstructions`, `contact` e pelo menos um `discount`. Cada desconto exige `value` (2–15 caracteres) e `description` não vazia. Instruções e descrições são texto sem limite de domínio; a API mantém a escrita recebida, sem truncar, preencher ou corrigir. O benefício não tem nome, título ou atributo de condições.
 
 ### Criar vários benefícios de uma vez
 
@@ -222,6 +222,34 @@ Exemplo de `POST /v1/admin/establishments`:
 ```
 
 Para criar estabelecimento, categoria ativa e benefício existente são obrigatórios; o benefício deve ter desconto e pode já estar associado a outros estabelecimentos. Cada estabelecimento mantém apenas um benefício, e o mesmo benefício pode ser compartilhado. `serviceIds` pode ser uma lista vazia. `facadeImageUrl` HTTPS e `altitude` são opcionais. O estado é a sigla de duas letras.
+
+O nome do estabelecimento exige pelo menos 2 caracteres; sua descrição é obrigatória/não vazia.
+Ambos usam TEXT, sem máximo de domínio. O campo `channel` aceita `PHYSICAL` (padrão quando omitido),
+`ONLINE` ou `HYBRID`. PHYSICAL/HYBRID exigem endereço completo e latitude/longitude; ONLINE exige
+endereço e coordenadas ausentes/nulos, inclusive altitude. Exemplo exclusivamente online:
+
+```json
+{
+  "name": "Parceiro online",
+  "description": "20%",
+  "channel": "ONLINE",
+  "categoryId": "UUID_REAL_DA_CATEGORIA",
+  "benefitId": "UUID_REAL_DO_BENEFICIO",
+  "serviceIds": []
+}
+```
+
+Substitua os dois marcadores pelos UUIDs retornados pela API. O objeto também pode integrar
+`establishments` no endpoint `/batch`. A resposta inclui `channel` e `mappable` (false para ONLINE).
+`GET /v1/establishments?channel=ONLINE` filtra parceiros online; `?forMap=true` retorna somente
+PHYSICAL/HYBRID com coordenadas. Sem filtro, todos os canais aparecem. Não criar pins com coordenadas nulas.
+
+`PATCH /v1/admin/establishments/{id}` com `{"channel":"ONLINE"}` limpa o endereço anterior
+na mesma transação. Para voltar a PHYSICAL/HYBRID, enviar a localização completa. Informar endereço
+ou coordenadas junto de ONLINE retorna `400`. Favoritos de ONLINE são permitidos; visitas presenciais
+a esse canal retornam `400`, preservando histórico anterior.
+
+Preparação dos lotes e mapeamento de UUIDs: [guia de carga](carga-catalogo.md).
 
 ## Usuários: administração
 

@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import com.weg.benefits.catalog.CatalogService;
 import com.weg.benefits.catalog.Establishment;
+import com.weg.benefits.catalog.EstablishmentChannel;
 import com.weg.benefits.identity.AppUser;
 import com.weg.benefits.identity.IdentityException;
 import com.weg.benefits.identity.IdentityService;
@@ -98,6 +99,20 @@ class EngagementServiceTests {
         assertSame(owner, saved.getValue().getUser());
         assertSame(establishment, saved.getValue().getEstablishment());
         assertEquals(occurredAt, saved.getValue().getOccurredAt());
+    }
+
+    @Test
+    void onlinePartnerCannotReceivePhysicalVisits() {
+        Establishment establishment = mock(Establishment.class);
+        when(identity.lockActiveUserForEngagement(USER_ID)).thenReturn(mock(AppUser.class));
+        when(catalog.requireExistingEstablishmentForEngagement(ESTABLISHMENT_ID)).thenReturn(establishment);
+        when(establishment.getChannel()).thenReturn(EstablishmentChannel.ONLINE);
+
+        EngagementException failure = assertThrows(EngagementException.class, () -> service.recordVisit(USER_ID,
+                new EngagementDtos.VisitCreateRequest(ESTABLISHMENT_ID, Instant.parse("2026-10-23T14:00:00Z"))));
+
+        assertEquals(HttpStatus.BAD_REQUEST, failure.getStatus());
+        verifyNoInteractions(visits);
     }
 
     @Test

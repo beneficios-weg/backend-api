@@ -129,13 +129,17 @@ public class CatalogService {
     }
 
     public EstablishmentResponse createEstablishment(EstablishmentCreateRequest request) {
+        validateLength(request.name(), 2, Integer.MAX_VALUE, "nome");
+        validateRequiredText(request.description(), "descrição");
+        EstablishmentChannel channel = request.channel() == null ? EstablishmentChannel.PHYSICAL : request.channel();
+        EstablishmentLocation.from(request).validate(channel);
         String imageUrl = canonicalImageUrl(request.facadeImageUrl());
         Category category = activeCategory(request.categoryId());
         Set<ServiceOption> linkedServices = activeServices(request.serviceIds());
-        Establishment value = new Establishment(request.name().trim(), request.description().trim(),
-                request.postalCode(), request.streetNumber(), request.street().trim(), request.district().trim(),
-                request.city().trim(), upper(request.state()), request.latitude(), request.longitude(),
-                request.altitude(), imageUrl, category, linkedServices);
+        Establishment value = new Establishment(request.name(), request.description(),
+                request.postalCode(), request.streetNumber(), trim(request.street()), trim(request.district()),
+                trim(request.city()), upper(request.state()), request.latitude(), request.longitude(),
+                request.altitude(), imageUrl, category, linkedServices, channel);
         assignBenefit(value, request.benefitId());
         return EstablishmentResponse.from(establishments.save(value));
     }
@@ -146,18 +150,22 @@ public class CatalogService {
 
     public EstablishmentResponse updateEstablishment(UUID id, EstablishmentPatchRequest request) {
         requireChanges(request.hasChanges());
+        if (request.name() != null) validateLength(request.name(), 2, Integer.MAX_VALUE, "nome");
+        validateOptionalText(request.description(), "descrição");
         if (Boolean.TRUE.equals(request.clearFacadeImageUrl()) && request.facadeImageUrl() != null) {
             throw CatalogException.invalid("Informe a URL da fachada ou solicite sua remoção, não ambos.");
         }
         String imageUrl = canonicalImageUrl(request.facadeImageUrl());
         Establishment value = establishment(id);
+        EstablishmentChannel channel = request.channel() == null ? value.getChannel() : request.channel();
+        EstablishmentLocation.from(request, value, channel).validate(channel);
         Category category = request.categoryId() == null ? null : activeCategory(request.categoryId());
         Set<ServiceOption> linkedServices = request.serviceIds() == null ? null : activeServices(request.serviceIds());
         if (request.benefitId() != null) assignBenefit(value, request.benefitId());
-        value.update(trim(request.name()), trim(request.description()), request.postalCode(), request.streetNumber(),
+        value.update(request.name(), request.description(), request.postalCode(), request.streetNumber(),
                 trim(request.street()), trim(request.district()), trim(request.city()), upper(request.state()),
                 request.latitude(), request.longitude(), request.altitude(), imageUrl, category,
-                linkedServices, request.active());
+                linkedServices, request.active(), channel);
         if (Boolean.TRUE.equals(request.clearFacadeImageUrl())) value.clearFacadeImageUrl();
         return EstablishmentResponse.from(value);
     }
@@ -176,10 +184,10 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public PageResponse<EstablishmentResponse> searchEstablishments(String query, UUID categoryId,
-            UUID serviceId, int page, int size) {
+            UUID serviceId, EstablishmentChannel channel, boolean forMap, int page, int size) {
         if (query != null && query.length() > 100) throw CatalogException.invalid("A busca aceita até 100 caracteres.");
-        String normalized = query == null || query.isBlank() ? null : query.trim();
-        return map(establishments.searchActive(normalized, categoryId, serviceId,
+        String normalized = query == null || query.isBlank() ? "" : query.trim();
+        return map(establishments.searchActive(normalized, categoryId, serviceId, channel, forMap,
                 pageable(page, Math.min(size, 50))), EstablishmentResponse::from);
     }
 
@@ -201,9 +209,12 @@ public class CatalogService {
     }
 
     public BenefitResponse createBenefit(BenefitCreateRequest request) {
+        validateRequiredText(request.audience(), "público");
+        validateRequiredText(request.participationInstructions(), "instruções de participação");
+        validateRequiredText(request.contact(), "contato");
         validateDiscounts(request.discounts());
-        return BenefitResponse.from(benefits.save(new Benefit(request.audience().trim(),
-                request.participationInstructions().trim(), request.contact().trim(),
+        return BenefitResponse.from(benefits.save(new Benefit(request.audience(),
+                request.participationInstructions(), request.contact(),
                 discounts(request.discounts()))));
     }
 
@@ -215,10 +226,10 @@ public class CatalogService {
         requireChanges(request.hasChanges());
         validateOptionalText(request.audience(), "público");
         validateOptionalText(request.contact(), "contato");
-        validateOptionalLength(request.participationInstructions(), 50, 300, "instruções de participação");
+        validateOptionalText(request.participationInstructions(), "instruções de participação");
         if (request.discounts() != null) validateDiscounts(request.discounts());
         Benefit value = benefit(id);
-        value.update(trim(request.audience()), trim(request.participationInstructions()), trim(request.contact()),
+        value.update(request.audience(), request.participationInstructions(), request.contact(),
                 request.discounts() == null ? null : discounts(request.discounts()), request.active());
         return BenefitResponse.from(value);
     }
@@ -269,15 +280,16 @@ public class CatalogService {
         selected.linkTo(establishment);
     }
     private static List<Discount> discounts(List<DiscountInput> values) {
-        return values.stream().map(value -> new Discount(value.value().trim(), value.description().trim())).toList();
+        return values.stream().map(value -> new Discount(value.value(), value.description())).toList();
     }
     private static void validateDiscounts(List<DiscountInput> values) {
         if (values == null || values.isEmpty()) {
             throw CatalogException.invalid("O benefício deve possuir ao menos um desconto.");
         }
         for (DiscountInput value : values) {
+            if (value == null) throw CatalogException.invalid("Informe um desconto válido.");
             validateLength(value.value(), 2, 15, "valor do desconto");
-            validateLength(value.description(), 10, 300, "descrição do desconto");
+            validateRequiredText(value.description(), "descrição do desconto");
         }
     }
     private Set<ServiceOption> activeServices(List<UUID> ids) {
@@ -309,10 +321,8 @@ public class CatalogService {
     private static void validateOptionalText(String value, String field) {
         if (value != null && value.isBlank()) throw CatalogException.invalid("O campo " + field + " é obrigatório.");
     }
-    private static void validateOptionalLength(String value, int min, int max, String field) {
-        if (value != null && (value.trim().length() < min || value.trim().length() > max)) {
-            throw CatalogException.invalid("O campo " + field + " deve ter entre " + min + " e " + max + " caracteres.");
-        }
+    private static void validateRequiredText(String value, String field) {
+        if (value == null || value.isBlank()) throw CatalogException.invalid("O campo " + field + " é obrigatório.");
     }
     private static void validateLength(String value, int min, int max, String field) {
         if (value == null || value.trim().length() < min || value.trim().length() > max) {

@@ -6,6 +6,13 @@
 
 ## 1. Recomendação
 
+**Atualização do contrato — 2026-10-27:** a API agora retorna `channel` (PHYSICAL/ONLINE/HYBRID)
+e `mappable` em Establishment. ONLINE não possui endereço/coordenadas; cidade/UF podem ser nulas
+inclusive em favoritos. Listas comuns incluem online; alimentar o mapa com `forMap=true` ou filtrar
+`mappable=true` no cache offline. Não enviar visitas presenciais para ONLINE (400). Instruções e
+descrições mantêm texto literal sem limites artificiais; não truncar no cliente. A adaptação da tela,
+serviços e cache Mobile deve ocorrer no repositório do cliente. Ver [guia atualizado](carga-catalogo.md).
+
 **Geoapify é adequada e a recomendação é usá-la para geocodificação de endereços do catálogo.** A API converte um endereço em coordenadas, aceita busca textual ou campos separados, permite limitar a busca ao Brasil e retorna níveis de confiança que ajudam a revisar se o ponto corresponde ao estabelecimento. O plano gratuito informa 3.000 créditos por dia, sem cartão, e pode ser usado em produção dentro dos limites e com as atribuições exigidas. Uma requisição simples de geocodificação custa normalmente um crédito. [Documentação de geocodificação](https://apidocs.geoapify.com/docs/geocoding/forward-geocoding/), [preços e uso gratuito](https://www.geoapify.com/pricing/)
 
 Para o escopo e a infraestrutura atuais, a menor integração segura é:

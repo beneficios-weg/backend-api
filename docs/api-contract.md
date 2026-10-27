@@ -41,7 +41,7 @@ Implementado na etapa Catalog:
 
 - `GET /v1/categories`
 - `GET /v1/services` (opções ativas usadas no catálogo)
-- `GET /v1/establishments?query=&categoryId=&serviceId=&page=&size=`
+- `GET /v1/establishments?query=&categoryId=&serviceId=&channel=&forMap=false&page=&size=`
 - `GET /v1/establishments/{id}`
 - `GET /v1/establishments/{id}/benefits` se não estiverem incluídos no detalhe
 
@@ -62,7 +62,7 @@ Proposta de famílias de rotas protegidas pelo papel ADMIN:
 
 As rotas administrativas incluem `GET` paginado e por ID, `POST`, `PATCH /{id}` e `POST /{id}/deactivation` em cada família. As rotas administrativas exigem papel ADMIN; as de leitura exigem sessão autenticada.
 
-Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit exige `discounts` não vazia com `value` (2–15) e `description` (10–300), ambos obrigatórios. Cada Establishment possui um Benefit e o mesmo Benefit pode estar associado a vários Establishments (D-057); `BenefitResponse.establishmentCount` informa quantos vínculos existem, e `EstablishmentResponse.benefitId` identifica seu benefício.
+Na implementação atual, cada família tem consulta/listagem, criação, edição parcial e desativação lógica protegidas por ADMIN. A desativação preserva registros e relações e oculta o item das consultas normais; não há exclusão física. Category armazena nome, chave Iconify e uma das oito cores predefinidas (`#1B5E20`, `#0D47A1`, `#4A148C`, `#B71C1C`, `#E65100`, `#006064`, `#4E342E`, `#37474F`). Establishment aceita URL HTTPS opcional de fachada. O DTO de Benefit exige `discounts` não vazia com `value` (2–15) e `description` (texto não vazio, sem limite de domínio), ambos obrigatórios. Instruções são texto obrigatório sem limite de domínio. Cada Establishment possui um Benefit e o mesmo Benefit pode estar associado a vários Establishments (D-057); `BenefitResponse.establishmentCount` informa quantos vínculos existem, e `EstablishmentResponse.benefitId` identifica seu benefício.
 
 Existem endpoints de criação em lote para todas as entidades do Catalog: `POST /v1/admin/categories/batch`, `/services/batch`, `/establishments/batch` e `/benefits/batch`. Cada rota recebe o objeto wrapper (`categories`, `services`, `establishments` ou `benefits`) com 1 a 100 entradas, validando cada entrada como na rota individual e retornando `201` com a lista na ordem recebida. Cada lote é atômico dentro do próprio recurso; os quatro lotes não compartilham uma transação. Para evitar nomes duplicados, a criação em lote de Services rejeita nomes repetidos sem diferenciar maiúsculas/minúsculas, tanto entre os itens enviados quanto em conflito com o catálogo existente. O lote de Benefits também cria os Discounts de cada Benefit.
 
@@ -78,14 +78,20 @@ Exemplo do fluxo administrativo:
 
 O catálogo de rotas implementadas, campos, exemplos JSON e respostas está em [`http-api.md`](http-api.md).
 
-### Decisões aprovadas ainda sem implementação — revisão de 2026-10-27
+### Implementação da revisão de 2026-10-27
 
-- D-060 aprova ofertas online sem endereço ou coordenadas, em lista fora do mapa. As rotas,
-  DTOs, identificação/categoria e ativação desse fluxo ainda precisam de desenho e implementação;
-  não tratar o comportamento como disponível no contrato publicado.
-- D-061 exige preservar a escrita do PDF, inclusive erros da fonte. Os limites vigentes de
-  instruções 50–300 e descrições 10–300 não foram alterados nesta revisão. Quarenta rascunhos
-  literais da preparação ficam incompatíveis com esses limites, sem preenchimento ou resumo.
+- Establishment recebe `channel`: `PHYSICAL` (padrão quando omitido na criação), `ONLINE` ou `HYBRID`.
+  ONLINE exige todos os campos de endereço/coordenadas ausentes ou nulos, inclusive altitude.
+  PHYSICAL/HYBRID exigem CEP, número, rua, bairro, cidade, UF, latitude e longitude; altitude é opcional.
+  A resposta inclui `channel` e `mappable`; ONLINE tem `mappable=false`. `channel` filtra a lista;
+  `forMap=true` retorna apenas físicos/híbridos com coordenadas. Sem filtros, lista inclui online.
+  `PATCH` para ONLINE limpa a localização anterior atomicamente; voltar a físico/híbrido exige
+  preencher a localização completa. Localização enviada junto de ONLINE é inválida (400).
+  Categoria ativa, benefício, ativação no primeiro vínculo e compartilhamento seguem iguais.
+- V7 remove os limites artificiais de instruções e descrições, preservando obrigatoriedade e texto
+  exato. Nome do estabelecimento tem mínimo de 2, sem máximo de domínio; `Discount.value` continua 2–15.
+  V8 adiciona canais e mantém os registros existentes como PHYSICAL, com endereço e vínculos intactos.
+  São alterações aditivas ao histórico de migrações; o Mobile precisa adotar o filtro de mapa.
 - D-062 corrige atribuição de dados: Care recebe somente a oferta de 20% no serviço de Nutrição
   da página 46. Contatos de outros profissionais que citam o site Care não criam vínculos por
   inferência. Permanece exatamente um Benefit por Establishment, compartilhável entre unidades.
@@ -111,6 +117,9 @@ Listas aceitam `page` e `size`; o tamanho é limitado a 100. A resposta de favor
 `PUT` e `DELETE` de favoritos são idempotentes e retornam `204`. `POST /v1/me/visits` recebe `establishmentId` e `occurredAt` (ISO 8601 com offset; armazenado como instante UTC). Uma visita nova retorna `201`; reenvio/duplicata retorna `200` com o evento já persistido. A chave é a combinação do proprietário autenticado, estabelecimento e instante do evento; uma visita do mesmo usuário ao mesmo estabelecimento dentro de 30 minutos é tratada como duplicata. Não há prazo máximo para atraso offline.
 
 O servidor deriva o proprietário da sessão; nenhum endpoint aceita `userId` do cliente. Apenas estabelecimentos existentes podem receber eventos de visita; eventos podem ser aceitos mesmo após desativação do estabelecimento para acomodar sincronização offline. Visitas repetidas fora da janela de 30 minutos são permitidas. Não enviar nem armazenar trilhas contínuas de GPS.
+
+Parceiros ONLINE podem ser favoritados, mas não recebem visitas presenciais: `POST /v1/me/visits`
+retorna `400` para esse canal. Histórico existente não é apagado ao mudar o canal.
 
 O cliente pode manter os dados e operações offline sem prazo de expiração até a reconexão (D-051). Se uma sessão tiver sido revogada por desativação da conta, a API retorna `401`; o app informa que a sessão/conta não está disponível, não sincroniza e oferece apagar a fila local. Não enviar operações pendentes sob outra conta (D-054). A API não diferencia uma conta desativada de uma sessão inválida na resposta de autenticação.
 

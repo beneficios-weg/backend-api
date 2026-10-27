@@ -1,6 +1,23 @@
 # Revisão do catálogo a partir do PDF — 2026-10-27
 
-## Estado atual após a resposta do usuário
+## Estado atual — API e preparação V8
+
+A implementação aprovada agora aceita os 112 benefícios com texto literal. V7 amplia os campos
+textuais obrigatórios sem preenchimento ou resumo; V8 distingue estabelecimentos PHYSICAL, ONLINE
+e HYBRID, mantendo o legado como PHYSICAL. A listagem inclui online; o mapa usa `forMap=true`.
+Consulte [o guia de carga](carga-catalogo.md) para campos, testes e mapeamento dos UUIDs reais.
+
+`target/catalogo-carga-v8-2026-10-27/` contém os benefícios em lotes HTTP de 100 e 12, índice de
+respostas, template de UUIDs e 93 rascunhos de estabelecimentos (52 online e 41 unidades pesquisadas).
+Sem UUIDs mapeados, nenhum lote de estabelecimentos é apresentado como pronto. Com os UUIDs,
+52 online e 17 unidades têm os campos técnicos completos; 24 unidades continuam com pendências.
+Campos completos não confirmam participação comercial nem autorizam importar automaticamente.
+Care permanece somente PDF-080; campanhas Uningá e endereços divergentes não foram resolvidos por inferência.
+
+O preparador não faz chamadas à API. A adaptação do Mobile, revisão das pendências e carga no
+ambiente hospedado permanecem posteriores. Os dados de origem e pacotes anteriores estão preservados.
+
+## Histórico da preparação literal antes de V7/V8
 
 Esta seção e o pacote **fiel ao PDF** substituem as orientações da versão normalizada abaixo.
 O pacote anterior permanece como histórico, incluindo os antigos lotes de 100/12, que não devem
