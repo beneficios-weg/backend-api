@@ -1,5 +1,65 @@
 # Revisão do catálogo a partir do PDF — 2026-10-27
 
+## Estado atual após a resposta do usuário
+
+Esta seção e o pacote **fiel ao PDF** substituem as orientações da versão normalizada abaixo.
+O pacote anterior permanece como histórico, incluindo os antigos lotes de 100/12, que não devem
+ser usados para a política atual de escrita.
+
+- **Texto:** manter a redação do PDF, inclusive erros de digitação, datas, percentuais, contatos
+  e cupons. Retiradas paráfrases, frases de preenchimento, rótulos inventados e alertas comerciais
+  que tinham sido inseridos nos payloads. Correções de reconhecimento OCR foram conferidas nas
+  imagens; quebras visuais foram convertidas em espaços, sem corrigir a fonte.
+- **Care:** a oferta atribuída à clínica é somente `PDF-080`, Ana Paula Schreiner, página 46:
+  **“20% no serviço de Nutrição”**. Removidas as associações presumidas de `PDF-083`, `PDF-087`,
+  `PDF-089`, `PDF-092` e `PDF-096` com `UNIT-034`; essas ofertas continuam como registros dos
+  próprios profissionais, preservando seus contatos. A menção ao site Care não prova que uma
+  oferta de profissional deva ser agrupada na clínica. Não foi aprovada cardinalidade diferente.
+- **Online:** aprovada lista de ofertas online sem endereço/coordenadas e fora do mapa (D-060).
+  A implementação na API/Mobile permanece pendente; nenhum comportamento publicado foi alterado.
+- **Pontos:** os 20 pares selecionados foram aprovados pelo usuário e registrados com os valores
+  exatos. A aprovação não executa importação nem escolhe um endereço entre alternativas conflitantes.
+
+### Pacote atual e compatibilidade
+
+`target/catalogo-beneficios-pdf-fiel-2026-10-27.zip`, com arquivos em
+`target/catalogo-pdf-fiel-2026-10-27/`:
+
+- `00_benefits_manifest.json`: 112 ofertas, escrita da fonte, proveniência e metadados corrigidos.
+- `02_benefits_literal_drafts_not_api_payload.json`: rascunhos, com o texto completo de Desconto
+  em um bloco. O destaque é um trecho literal da fonte; nenhum rótulo foi criado. O wrapper com
+  metadados não é payload HTTP.
+- `03_establishments_research_not_api_payload.json`: 41 unidades/candidatos, agora associados
+  a 29 ofertas detalhadas após a correção da Care; não significa 41 cadastros prontos.
+- `04_coordinate_approvals.json`: aprovação vinculada aos 20 pares selecionados; os pontos anteriores
+  e o campus Florianópolis adiado foram preservados.
+- `05_ofertas-texto-do-pdf.md`: escrita das 112 ofertas e links das capturas para conferência.
+- `06_ofertas-validacao.csv`: compatibilidade de cada rascunho com o DTO vigente.
+- `07_unidades-pontos-aprovados.csv` e `08_pontos-aprovados.md`: unidades e pontos revisados.
+- `09_validation.json`, `fontes/` e `geoapify/`: verificações, PDF idêntico, capturas e proveniência.
+
+**72 rascunhos atendem aos limites atuais; 40 não atendem.** Há 30 instruções menores que 50 caracteres,
+3 maiores que 300 e 10 blocos integrais de Desconto fora de 10–300; esses grupos se sobrepõem. Os dados
+foram preservados sem preenchimento ou resumo. Antes da carga integral, adequar a representação
+e as validações em etapa de código (P-030). Esses rascunhos não são os antigos lotes normalizados.
+
+As informações ausentes de Construthema/MBA ECA USP continuam ausentes. As versões de Uningá e
+Verbalize, contatos, datas e cupons permanecem como no documento, sem exigir que o usuário invente
+uma resolução ou que a pesquisa altere a escrita. Isso não é confirmação externa de vigência.
+
+### Validação da revisão atual
+
+`target/build-literal-pdf-package.local.py` retornou `PASS` para integridade e coerência dos
+arquivos: 112 ofertas preservadas, texto-fonte igual ao rascunho nos campos correspondentes,
+nenhum prefixo artificial, vínculos bidirecionais, Care somente PDF-080, 20 aprovações exatas,
+JSONs legíveis, ZIP íntegro, hashes das fontes e ausência da chave Geoapify. `PASS` não significa
+aceitação dos 40 rascunhos pelo DTO vigente. Os 112 cartões únicos foram inspecionados visualmente.
+Nenhuma consulta Geoapify nova, chamada de cadastro, alteração de banco, migração, build, teste
+de aplicação ou deploy foi executado nesta revisão. A próxima etapa técnica é implementar o
+suporte online e acomodar os textos sem alterar a redação.
+
+## Relatório histórico da versão normalizada — supersedido pela revisão acima
+
 ## Objetivo e alcance
 
 Preparar as ofertas do documento fornecido pelo usuário para o contrato atual de Benefit e

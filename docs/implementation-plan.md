@@ -116,3 +116,15 @@ Microserviços, painel de RH/ERP, pagamentos, chat, navegação própria, posici
 `Fundação → Identity/Admin inicial → Catálogo/migrações → CRUD Admin → Leitura/Discovery → Engagement → Hardening/integração`.
 
 O cliente desktop depende de Identity e das rotas administrativas do Catalog. O mobile depende de Identity, leitura do Catalog e depois Engagement. A interface nativa de geofencing é responsabilidade do projeto mobile; o backend depende apenas do contrato de visita acordado.
+
+## 8. Ajustes aprovados após revisão da carga — 2026-10-27
+
+Ofertas online poderão aparecer em lista, sem endereço/coordenadas e fora do mapa (D-060).
+Esse comportamento ainda não existe no código; planejar uma extensão mínima de Catalog e do
+contrato Mobile sem inventar estabelecimentos físicos nem modificar relações já existentes.
+
+A carga deve preservar os textos do PDF, inclusive erros da fonte (D-061). Os limites atuais
+impedem 40 dos 112 rascunhos literais nesta preparação; adequar validações/representação em etapa
+própria antes da importação completa, sem preencher ou resumir conteúdo. A correção da Care
+mantém somente a oferta de 20% em Nutrição atribuída à clínica (D-062); não exige mudança da
+cardinalidade D-057. Os 20 novos pares de coordenadas estão aprovados (D-063), sem importação.
