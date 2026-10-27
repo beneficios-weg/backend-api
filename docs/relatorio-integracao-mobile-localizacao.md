@@ -257,7 +257,7 @@ Não são bloqueios para o relatório ou para preparar coordenadas manualmente, 
 
 ## 9. Estado da decisão
 
-- **Avaliação Geoapify:** adequada para geocodificação; recomendada inicialmente para enriquecimento manual/revisado de catálogo. Provedor escolhido para produção ainda não foi aprovado explicitamente.
+- **Avaliação Geoapify:** aprovada para geocodificar endereços de estabelecimentos e apoiar o preenchimento/revisão de coordenadas (D-059). O uso deve manter chave fora do Mobile e exigir conferência antes de persistir. A decisão não seleciona Geoapify para localização pessoal, tiles ou roteamento, nem implementa chamada no backend.
 - **Localização em segundo plano:** propriedade do Mobile e de APIs nativas; o Backend já está definido para receber apenas eventos finais.
 - **Regra confirmada:** visita após 3 minutos; sincronização offline até reconectar; sem reatribuir fila a outra conta.
 - **Fora do relatório/sem implementação:** integração de código Geoapify, endpoint novo, PostGIS, mudança de tiles, roteamento de produção, alteração de contrato, deploy e migrações.

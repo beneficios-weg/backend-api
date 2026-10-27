@@ -427,3 +427,12 @@ Não registrar senhas, tokens, hashes, chaves, coordenadas pessoais ou justifica
 - **Comandos/resultados:** Revisados documentos de produto, API, sessão, DTOs, migrações e rotas; consultadas fontes oficiais Geoapify, Android e Apple. `git diff --check` e verificação de links relativos executados após a edição. Nenhum teste, build, API ou deploy executado, pois só houve documentação.
 - **Limitações/riscos:** Cotas, termos, versões e limitações dos sistemas operacionais mudam; conferir os links oficiais antes de integrar. O Mobile não está neste workspace, então sua arquitetura e permissões precisam ser verificadas no repositório Mobile da outra máquina. Nenhuma dependência Geoapify foi adicionada.
 - **Próxima etapa:** Na máquina com o Mobile, confirmar runtime e autenticação por cookie; depois implementar o cliente HTTP e sincronização de catálogo, seguida de localização nativa e validação real da regra de visita de três minutos.
+
+### Decisão de uso da Geoapify — 2026-10-27
+
+- **Objetivo e estado:** Registrar a escolha da Geoapify para geocodificação de endereços de estabelecimentos, conforme avaliação no relatório de integração.
+- **Arquivos alterados:** `AGENTS.md`, `docs/decision-register.md`, `docs/relatorio-integracao-mobile-localizacao.md` e este diário.
+- **Comportamento/rotas/migrações:** D-059 aprova geocodificação Geoapify com conferência humana dos resultados antes de persistir latitude/longitude. Nenhuma rota, migração ou integração de código foi adicionada.
+- **Limites e pendências:** A chave não vai no Mobile. A decisão não abrange posição pessoal, tiles nem roteamento. Automatizar geocodificação no backend ou no painel requer tarefa própria; atribuições do fornecedor e da fonte dos dados devem ser mantidas.
+- **Validação:** `git diff --check` passou e os links relativos conferem. Nenhum build ou teste executado por se tratar de documentação.
+- **Próxima etapa:** Usar a Geoapify para preparar/revisar as coordenadas de catálogo quando a equipe retomar a carga de estabelecimentos; validar runtime e sessão do Mobile em paralelo.
