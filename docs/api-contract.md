@@ -78,6 +78,18 @@ Exemplo do fluxo administrativo:
 
 O catálogo de rotas implementadas, campos, exemplos JSON e respostas está em [`http-api.md`](http-api.md).
 
+### Decisões aprovadas ainda sem implementação — revisão de 2026-10-27
+
+- D-060 aprova ofertas online sem endereço ou coordenadas, em lista fora do mapa. As rotas,
+  DTOs, identificação/categoria e ativação desse fluxo ainda precisam de desenho e implementação;
+  não tratar o comportamento como disponível no contrato publicado.
+- D-061 exige preservar a escrita do PDF, inclusive erros da fonte. Os limites vigentes de
+  instruções 50–300 e descrições 10–300 não foram alterados nesta revisão. Quarenta rascunhos
+  literais da preparação ficam incompatíveis com esses limites, sem preenchimento ou resumo.
+- D-062 corrige atribuição de dados: Care recebe somente a oferta de 20% no serviço de Nutrição
+  da página 46. Contatos de outros profissionais que citam o site Care não criam vínculos por
+  inferência. Permanece exatamente um Benefit por Establishment, compartilhável entre unidades.
+
 `V3__benefit_discounts_and_exclusive_establishment.sql` muda o esquema sem editar V2. Antes de executá-la, verificar se existem linhas em `establishment` ou `benefit`; se houver, a migração interrompe com orientação para mapear os dados. Não dividir o campo legado `discount` por suposição.
 
 `V5__remove_benefit_conditions.sql` remove condições do modelo e das respostas/requisições de Benefit. Antes de remover a coluna aplicada, move seus valores atuais para `benefit_legacy_condition_archive`, sem expor essa tabela pela API. Valores enviados no campo antigo `conditions` não fazem mais parte do contrato.
