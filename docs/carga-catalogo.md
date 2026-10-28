@@ -78,6 +78,32 @@ e `/establishments/batch`, respectivamente, com sessão ADMIN. Os lotes são at�
 não entre endpoints. Não repetir POST após timeout sem consultar a API: criação em lote não tem
 chave de idempotência. Conferir respostas e catálogo existente para evitar duplicatas.
 
+## Conferência de UTF-8 no PowerShell
+
+Uma resposta lida pelo Windows PowerShell pode apresentar `EducaÃ§Ã£o` onde a fonte tem
+`Educação`. Isso exige conferir os bytes HTTP antes de concluir que o texto no banco foi alterado.
+Preservar respostas anteriores e não reenviar POSTs para tentar corrigir acentos.
+
+Salvar a resposta de um GET diretamente em arquivo e lê-la explicitamente como UTF-8:
+
+```powershell
+Invoke-WebRequest `
+  -Uri "$baseUrl/v1/admin/categories?page=0&size=100" `
+  -WebSession $benefitsSession -UseBasicParsing -TimeoutSec 300 `
+  -OutFile '.\target\categorias-http-utf8.json'
+$categorias = Get-Content '.\target\categorias-http-utf8.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+```
+
+Fazer a mesma conferência dos benefícios, paginando com `size=100`. Comparar os campos pelos UUIDs
+retornados nos lotes e pelo índice de referências do PDF. Corrigir somente a leitura de uma cópia
+local se os bytes confirmarem isso; qualquer alteração de dados armazenados exige diagnóstico próprio.
+Com os UUIDs ASCII intactos, é possível preparar referências sem normalizar textos comerciais.
+Arquivos preparados não equivalem a cadastros concluídos.
+
+Ao salvar respostas de POST, `Invoke-WebRequest -InFile <payload> -OutFile <resposta>` também
+preserva os bytes para leitura posterior com `Get-Content -Encoding UTF8 | ConvertFrom-Json`.
+Isso não torna o POST idempotente: depois de timeout, conferir o catálogo antes de repetir.
+
 ## Pendências preservadas na pesquisa
 
 O pacote contém 52 rascunhos online e 41 unidades pesquisadas; isso não confirma que todas as
