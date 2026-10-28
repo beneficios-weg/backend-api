@@ -100,6 +100,10 @@ local se os bytes confirmarem isso; qualquer alteração de dados armazenados ex
 Com os UUIDs ASCII intactos, é possível preparar referências sem normalizar textos comerciais.
 Arquivos preparados não equivalem a cadastros concluídos.
 
+Ao salvar respostas de POST, `Invoke-WebRequest -InFile <payload> -OutFile <resposta>` também
+preserva os bytes para leitura posterior com `Get-Content -Encoding UTF8 | ConvertFrom-Json`.
+Isso não torna o POST idempotente: depois de timeout, conferir o catálogo antes de repetir.
+
 ## Pendências preservadas na pesquisa
 
 O pacote contém 52 rascunhos online e 41 unidades pesquisadas; isso não confirma que todas as
