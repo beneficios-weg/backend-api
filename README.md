@@ -126,6 +126,13 @@ OAuth configuration are ready. The password is read without echo and is not pass
 java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --spring.main.web-application-type=none
 ```
 
+## Trocar a senha de um ADMIN existente
+
+Use o [procedimento de manutenção CLI](docs/admin-password-maintenance.md) para os ambientes local e
+Render/Neon. Exige a senha atual, lê as senhas sem eco e revoga as sessões da conta. Não há novo
+endpoint de redefinição; não envie senhas ao chat nem em argumentos. A ferramenta não inicia a API
+nem aplica migrações, e a troca só ocorre quando o operador a executa no terminal.
+
 ## Available infrastructure endpoints
 
 - Health: `http://localhost:8081/actuator/health`

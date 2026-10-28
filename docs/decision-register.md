@@ -71,6 +71,7 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | D-063 | Os 20 pares de coordenadas selecionados no pacote da revisão regional foram aprovados pelo usuário | Resposta “4. Tudo certo” em 2026-10-27; aprovação vinculada aos pares em `04_coordinate_approvals.json`, sem escrita na API ou escolha implícita entre endereços alternativos |
 | D-064 | Establishment usa channel PHYSICAL (padrão compatível), ONLINE ou HYBRID. ONLINE sem localização; físicos/híbridos com localização completa. Resposta inclui mappable; mapa consulta forMap=true. ONLINE permite favoritos e recusa visitas presenciais com 400 | Implementação da proposta aceita em 2026-10-27; preserva um Benefit por Establishment, compartilhável; V8 mantém legado como PHYSICAL |
 | D-065 | Instruções e descrições são TEXT obrigatório/não vazio sem limites artificiais; nome de Establishment tem mínimo 2 sem máximo de domínio. Preservar texto recebido literalmente; Discount.value continua 2–15 | Proposta aceita para cumprir D-061 em 2026-10-27; V7 amplia colunas sem alterar valores; não corrige datas, erros ou cupons |
+| D-066 | Troca operacional da senha de um ADMIN ativo por CLI, exigindo senha atual e revogando as sessões em transação, nos ambientes local e Render; sem rota de recuperação | Solicitada pelo usuário em 2026-10-28, que confirmou conhecer a senha atual. Ferramenta implementada; execução real pelo operador permanece pendente |
 
 ## Pendências que bloqueiam ou afetam etapas
 
@@ -100,6 +101,10 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 | P-026 | Um Benefit pode ser associado a vários Establishments? | Sim, conforme D-057; cada Establishment continua com exatamente um Benefit | Resolvido por D-057 |
 | P-029 | Como implementar e identificar ofertas online independentes de estabelecimentos físicos, conforme D-060? | Resolvido na API por channel e mappable, filtro forMap e V8 (D-064); integrar os campos na tela/cache Mobile | API resolvida; integração Mobile permanece |
 | P-030 | Como acomodar os textos literais do PDF nos campos atuais sem violar D-061? | Resolvido por TEXT obrigatório sem limites artificiais e V7 (D-065). Os 112 rascunhos passam no contrato ampliado, sem preenchimento nem resumo | Resolvido na API; carga no ambiente de entrega não executada |
+
+## D-066 — Manutenção operacional da senha do ADMIN — 2026-10-28
+
+O usuário solicitou alterar a senha nos ambientes local e Render e confirmou conhecer a atual. Implementado CLI de manutenção para uma conta ADMIN ativa existente: exige a senha atual, nova senha/confirmação sem eco e remove as sessões da conta junto da atualização do hash em transação única. Sem senha em argumentos, logs, arquivos, resposta HTTP ou e-mail; sem novo endpoint, migração ou conta. É uma exceção operacional explícita a D-007, que continua impedindo recuperação/redefinição pelo produto. O operador escolhe e executa cada ambiente separadamente; não foi autorizada recuperação sem a senha atual. O CLI recusa senha inteiramente em branco porque o login HTTP já usa `@NotBlank`, preservando os demais caracteres e os limites D-024. Ver [procedimento](admin-password-maintenance.md).
 
 ## Registro de alteração
 
