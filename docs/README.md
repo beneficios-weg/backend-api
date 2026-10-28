@@ -24,6 +24,8 @@ registro de decisões.
 
 ## Documentos
 
+- [`admin-password-maintenance.md`](admin-password-maintenance.md): troca operacional da senha de um ADMIN ativo com senha atual, terminal sem eco e revogação transacional das sessões, nos ambientes local e Render/Neon.
+
 - [`carga-catalogo.md`](carga-catalogo.md): canais físico/online/híbrido, preservação literal, preparador de lotes e testes isolados com PostgreSQL.
 
 - `implementation-plan.md`: arquitetura proposta, módulos, ordem, entregas e critérios de conclusão.

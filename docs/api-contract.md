@@ -16,6 +16,8 @@
 
 ## Contas e autenticação — Identity
 
+**Manutenção operacional (D-066, 2026-10-28):** há um CLI separado para trocar a senha de um ADMIN ativo mediante senha atual e revogar suas sessões. Não adiciona rota HTTP, não habilita recuperação de senha nem modifica a recusa de `password` em `PATCH /v1/admin/users/{id}`. Execução e configuração em [manutenção do ADMIN](admin-password-maintenance.md).
+
 Rotas implementadas nesta entrega:
 
 - `POST /v1/auth/login` — username ou e-mail e senha; autentica e define cookie de sessão `HttpOnly`.

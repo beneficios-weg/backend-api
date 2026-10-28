@@ -10,6 +10,11 @@ public class PasswordEncodingConfiguration {
 
     @Bean
     PasswordEncoder passwordEncoder() {
+        return newPasswordEncoder();
+    }
+
+    // The maintenance CLI must use the exact same algorithm and parameters as HTTP authentication.
+    public static PasswordEncoder newPasswordEncoder() {
         return Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 }

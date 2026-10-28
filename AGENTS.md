@@ -38,6 +38,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 
 ## Regras de implementação
 
+**Manutenção do ADMIN — 2026-10-28:** o usuário solicitou trocar a senha nos ambientes local e Render e confirmou conhecer a senha atual. A exceção operacional D-066 é um CLI separado, sem Spring/HTTP/Flyway: exige ADMIN ativo e senha atual, solicita nova senha/confirmação sem eco e atualiza hash/data e remove as sessões da conta na mesma transação. Não cria conta, não envia e-mail nem habilita recuperação ou edição de senha por endpoint. Execução real é feita pelo operador no seu terminal; nunca solicitar senha no chat. Ver `docs/admin-password-maintenance.md`.
+
 **Atualização de Identity — 2026-10-19:** as rotas de autenticação por sessão e administração de usuários estão implementadas parcialmente; a desativação é `POST /v1/admin/users/{id}/deactivation` conforme D-035. Considere obsoleta a frase acima que descreve o código como stateless e sem autenticação. Consulte `docs/implementation-log.md` para o estado validado. As demais regras de não inferir pendências permanecem vigentes.
 
 - Implemente somente a etapa/módulo solicitado; não antecipe os demais.
