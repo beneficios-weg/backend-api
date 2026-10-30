@@ -17,6 +17,8 @@ Um benefício pode ser compartilhado por várias unidades. Benefício sem estabe
 
 ## Nome Lazer
 
+**Publicação confirmada em 2026-10-30:** PR 64 mesclada no commit fe4271f, deploy `dep-dbiaalutlv9c739a6u1g` live, Flyway V9 aplicada e health/readiness UP. O contrato publicado aceita cinco caracteres. A renomeação por PATCH ainda depende da execução autenticada pelo operador; o script local `target/corrigir-categoria-lazer.ps1` foi preparado e validado com cenários simulados. Esta atualização não confirma importação dos estabelecimentos faltantes.
+
 O usuário confirmou **Lazer**, também visível no menu do PDF (`fontes/cartoes/p01-00.png` do pacote fiel). A carga usou **Lazer e Turismo**, enquanto o protótipo dizia Lazer. A API é a fonte dos nomes exibidos. As outras seis categorias do menu correspondem às importadas; não foram renomeadas.
 
 DTOs e constraint V2 exigiam seis caracteres e impediam Lazer (cinco). A correção mínima aceita 5–75 na criação individual/em lote e edição, validando também o nome após remover espaços externos. V9 altera somente a constraint; preserva nomes, UUIDs e vínculos. Não editar migrações anteriores.
