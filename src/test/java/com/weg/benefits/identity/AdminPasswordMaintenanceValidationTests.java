@@ -26,12 +26,24 @@ class AdminPasswordMaintenanceValidationTests {
                 {new javax.net.ssl.SSLHandshakeException("fixture secret"), new IllegalStateException("TLS")},
                 {new java.net.UnknownHostException("fixture secret"), new IllegalStateException("DNS")},
                 {new java.net.SocketTimeoutException("fixture secret"), new IllegalStateException("TIMEOUT")},
-                {new java.net.ConnectException("fixture secret"), new IllegalStateException("REDE")}}) {
+                {new java.net.ConnectException("fixture secret"), new IllegalStateException("REDE")},
+                {new java.net.SocketException("fixture secret"), new IllegalStateException("SOCKET")},
+                {new java.io.EOFException("fixture secret"), new IllegalStateException("EOF")}}) {
             var failure = new java.sql.SQLException("fixture SQL secret", "08001", sample[0]);
             String diagnostic = AdminPasswordMaintenanceCli.safeFailureReason(failure);
             assertTrue(diagnostic.startsWith("[" + sample[1].getMessage() + "]"));
             assertFalse(diagnostic.contains("fixture"));
         }
+    }
+
+    @Test
+    void connectionDiagnosticsExposeOnlyAllowlistedProtocolCodes() {
+        for (String state : new String[] {"08001", "08004", "08006", "08007", "08P01"}) {
+            String diagnostic = AdminPasswordMaintenanceCli.safeFailureReason(new java.sql.SQLException("sensitive fixture", state));
+            assertTrue(diagnostic.contains("SQLSTATE " + state));
+            assertFalse(diagnostic.contains("sensitive"));
+        }
+        assertFalse(AdminPasswordMaintenanceCli.safeFailureReason(new java.sql.SQLException("sensitive", "08SECRET")).contains("SECRET"));
     }
 
     @Test

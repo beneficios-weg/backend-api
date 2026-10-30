@@ -16,8 +16,9 @@ public final class AdminPasswordMaintenanceCli {
     private AdminPasswordMaintenanceCli() { }
 
     public static void main(String[] args) {
-        if (args.length != 1 || !(args[0].equals("--local") || args[0].equals("--render"))) {
-            System.err.println("Use somente --local ou --render; nunca informe senhas em argumentos.");
+        if (args.length != 1 || !(args[0].equals("--local") || args[0].equals("--render")
+                || args[0].equals("--check-local") || args[0].equals("--check-render"))) {
+            System.err.println("Use --local, --render, --check-local ou --check-render; nunca informe senhas em argumentos.");
             System.exit(2);
             return;
         }
@@ -29,7 +30,7 @@ public final class AdminPasswordMaintenanceCli {
         }
         int exit = 0;
         try {
-            run(args[0].equals("--render"), console);
+            run(args[0].endsWith("render"), args[0].startsWith("--check-"), console);
         } catch (InvalidInput exception) {
             System.err.println(exception.getMessage()); // Only fixed, application-owned messages.
             exit = 2;
@@ -42,15 +43,16 @@ public final class AdminPasswordMaintenanceCli {
         System.exit(exit);
     }
 
-    private static void run(boolean remote, Console console) throws SQLException {
+    private static void run(boolean remote, boolean checkOnly, Console console) throws SQLException {
         console.printf("Manutenção de senha ADMIN — ambiente %s%n", remote ? "RENDER / NEON" : "LOCAL");
+        if (checkOnly) console.printf("Diagnóstico de conexão: não solicita credenciais do ADMIN nem executa SQL.%n");
         String host = remote ? required(console.readLine("Host DIRETO do Neon (sem protocolo e sem -pooler): ")) : "localhost";
         String port = remote ? "5432" : defaultValue(console.readLine("Porta PostgreSQL local [5432]: "), "5432");
         String database = defaultValue(console.readLine("Banco [%s]: ", remote ? "neondb" : "benefits"), remote ? "neondb" : "benefits");
         String dbUser = remote ? required(console.readLine("Usuário do PostgreSQL: "))
                 : defaultValue(console.readLine("Usuário do PostgreSQL [benefits_dev]: "), "benefits_dev");
         String url = databaseUrl(remote, host, port, database);
-        console.printf("Destino: %s:%s/%s. A operação altera somente a conta ADMIN informada.%n", host, port, database);
+        console.printf("Destino: %s:%s/%s.%n", host, port, database);
 
         char[] databasePassword = null;
         char[] currentPassword = null;
@@ -62,21 +64,24 @@ public final class AdminPasswordMaintenanceCli {
                     : "Senha do PostgreSQL (Enter usa o padrão exclusivo de desenvolvimento): ");
             if (databasePassword == null) throw new InvalidInput("Operação cancelada; nenhuma alteração enviada.");
             if (!remote && databasePassword.length == 0) databasePassword = "benefits_dev_only".toCharArray();
-            String login = required(console.readLine("Username ou e-mail do ADMIN: "));
-            currentPassword = console.readPassword("Senha ATUAL do ADMIN: ");
-            newPassword = console.readPassword("NOVA senha (6 a 72 caracteres): ");
-            confirmation = console.readPassword("Repita a NOVA senha: ");
-            if (currentPassword == null || newPassword == null || confirmation == null)
-                throw new InvalidInput("Operação cancelada; nenhuma alteração enviada.");
-            if (!Arrays.equals(newPassword, confirmation))
-                throw new InvalidInput("As novas senhas não coincidem; nenhuma alteração enviada.");
-            validateNewPassword(newPassword);
-
             properties.setProperty("user", dbUser);
             properties.setProperty("password", new String(databasePassword));
             properties.setProperty("ApplicationName", "weg-benefits-admin-password-maintenance");
             try (Connection connection = DriverManager.getConnection(url, properties)) {
-                console.printf("Conexão com o PostgreSQL autenticada. Validando a conta ADMIN.%n");
+                console.printf("Conexão com o PostgreSQL autenticada.%n");
+                if (checkOnly) {
+                    console.printf("Diagnóstico concluído. Nenhuma senha de ADMIN ou dado foi alterado.%n");
+                    return;
+                }
+                String login = required(console.readLine("Username ou e-mail do ADMIN: "));
+                currentPassword = console.readPassword("Senha ATUAL do ADMIN: ");
+                newPassword = console.readPassword("NOVA senha (6 a 72 caracteres): ");
+                confirmation = console.readPassword("Repita a NOVA senha: ");
+                if (currentPassword == null || newPassword == null || confirmation == null)
+                    throw new InvalidInput("Operação cancelada; nenhuma alteração enviada.");
+                if (!Arrays.equals(newPassword, confirmation))
+                    throw new InvalidInput("As novas senhas não coincidem; nenhuma alteração enviada.");
+                validateNewPassword(newPassword);
                 int revoked = changePassword(connection, PasswordEncodingConfiguration.newPasswordEncoder(),
                         login, currentPassword, newPassword);
                 console.printf("Senha alterada. Sessões anteriores removidas: %d. Entre novamente no ambiente escolhido.%n", revoked);
@@ -99,6 +104,10 @@ public final class AdminPasswordMaintenanceCli {
                 return "[TIMEOUT] O banco não respondeu a tempo. Confira a rede e o estado do banco.";
             if (cause instanceof java.net.ConnectException)
                 return "[REDE] Não foi possível alcançar o PostgreSQL. Confira host, porta, firewall e se o banco está iniciado.";
+            if (cause instanceof java.net.SocketException)
+                return "[SOCKET] A conexão de rede foi interrompida ou bloqueada pelo sistema. Confira VPN, firewall e rede; nenhuma configuração de segurança foi alterada.";
+            if (cause instanceof java.io.EOFException)
+                return "[EOF] A conexão foi encerrada durante a comunicação com o PostgreSQL. Confira rede e disponibilidade do Neon.";
         }
         if (failure instanceof SQLException sql) {
             String state = sql.getSQLState();
@@ -113,9 +122,22 @@ public final class AdminPasswordMaintenanceCli {
             if ("55P03".equals(state) || "40P01".equals(state))
                 return "[DB_LOCK] A manutenção encontrou uma operação concorrente. Evite uso simultâneo da conta.";
             if (state != null && state.startsWith("08"))
-                return "[DB_CONNECTION] Falha ao estabelecer ou manter a conexão PostgreSQL. Confira rede, banco e JAR atualizado.";
+                return "[DB_CONNECTION] " + connectionFailureCode(sql)
+                        + " Falha ao estabelecer ou manter a conexão PostgreSQL. Confira rede, banco e JAR atualizado.";
         }
         return "[CLI_FAILURE] Falha interna na ferramenta ou na operação. Use o JDK 21 e recompile o JAR; não compartilhe credenciais.";
+    }
+
+    private static String connectionFailureCode(SQLException failure) {
+        // Allowlist protocol codes; never return arbitrary values or the driver error message.
+        return switch (failure.getSQLState()) {
+            case "08001" -> "SQLSTATE 08001 (conexão não estabelecida).";
+            case "08004" -> "SQLSTATE 08004 (conexão recusada pelo servidor).";
+            case "08006" -> "SQLSTATE 08006 (falha de comunicação).";
+            case "08007" -> "SQLSTATE 08007 (resultado da transação desconhecido).";
+            case "08P01" -> "SQLSTATE 08P01 (falha de protocolo).";
+            default -> "Categoria de conexão PostgreSQL.";
+        };
     }
 
     static String databaseUrl(boolean remote, String host, String port, String database) {

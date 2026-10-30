@@ -28,7 +28,7 @@ Preencha, nesta ordem:
 2. Banco: Enter usa **benefits**.
 3. Usuário do PostgreSQL: Enter usa **benefits_dev**.
 4. Senha do PostgreSQL: Enter usa o padrão **exclusivo de desenvolvimento** do Compose; se alterou a credencial local, digite a correspondente sem eco.
-5. Username ou e-mail do ADMIN que deseja alterar.
+5. Após a mensagem de conexão autenticada, username ou e-mail do ADMIN que deseja alterar.
 6. Senha **atual do ADMIN**, que é diferente da credencial do PostgreSQL.
 7. Nova senha do ADMIN e sua confirmação, ambas sem eco.
 
@@ -48,7 +48,7 @@ Preencha:
 2. **Banco** efetivamente usado pela API: Enter usa `neondb`, mas confira o nome no painel antes de aceitar.
 3. **Usuário do PostgreSQL** exibido no Connect.
 4. **Senha do PostgreSQL** exibida no Connect, digitada sem eco. Esta não é a senha de login do ADMIN.
-5. Username ou e-mail do ADMIN da API hospedada.
+5. Após a mensagem de conexão autenticada, username ou e-mail do ADMIN da API hospedada.
 6. Senha atual desse ADMIN, nova senha e confirmação, sem eco.
 
 O modo remoto aceita apenas host direto `*.neon.tech`, porta 5432, e usa TLS com verificação do certificado/hostname (`verify-full`, `DefaultJavaSSLFactory`). A conexão usa o driver PostgreSQL já existente, sem dependência adicional. Se houver falha de certificado, corrija o JDK/truststore; não desative a verificação. Referências: [pgJDBC SSL](https://jdbc.postgresql.org/documentation/ssl/) e [Neon: pooling e conexão direta](https://neon.com/docs/connect/connection-pooling).
@@ -57,15 +57,24 @@ O modo remoto aceita apenas host direto `*.neon.tech`, porta 5432, e usa TLS com
 
 ### Diagnosticar uma falha sem revelar credenciais
 
+Para conferir somente a conexão, sem fornecer nenhuma senha do ADMIN:
+
+```powershell
+.\scripts\change-admin-password.ps1 -Environment render -CheckConnection
+# Para conferir o PostgreSQL local, use -Environment local -CheckConnection.
+```
+
+Este modo solicita host/porta/banco/usuário e senha do PostgreSQL em prompt oculto, abre e fecha a conexão, sem executar SQL, sem migrações e sem solicitar login/senha do ADMIN. Não modifica dados ou sessões. O servidor pode registrar a tentativa de conexão/autenticação. Sucesso deste diagnóstico valida conexão e autenticação do banco, não a conta ADMIN nem permissões de manutenção. Na execução normal, a conexão agora também é aberta antes de pedir as credenciais do ADMIN.
+
 O CLI atualizado imprime uma categoria fixa antes do aviso de resultado não confirmado. Não imprime mensagens de exceção, SQL, stack traces ou dados fornecidos. Os códigos PostgreSQL usados na classificação seguem a [documentação oficial de SQLSTATE](https://www.postgresql.org/docs/current/errcodes-appendix.html).
 
 - `DB_AUTH`: autenticação recusada pelo PostgreSQL; conferir **usuário/senha do banco**, distintos do ADMIN. Se a senha da role foi trocada no Neon, usar a nova e atualizar também `DB_PASSWORD` no Render.
-- `TLS`, `DNS`, `TIMEOUT`, `REDE`, `DB_CONNECTION`: conferir certificado/JDK, host, conectividade ou disponibilidade conforme a mensagem. Não desativar TLS.
+- `TLS`, `DNS`, `TIMEOUT`, `REDE`, `SOCKET`, `EOF`, `DB_CONNECTION`: conferir certificado/JDK, host, conectividade ou disponibilidade conforme a mensagem. Não desativar TLS. Quando disponível, `DB_CONNECTION` inclui somente um SQLSTATE de uma lista permitida (08001, 08004, 08006, 08007, 08P01), sem texto de exceção.
 - `DB_NAME`, `DB_SCHEMA`, `DB_PERMISSION`: conferir banco/branch/migrações ou permissões; não recriar dados para contornar o erro.
 - `DB_LOCK`: evitar manutenção e uso concorrentes da conta.
 - `CLI_FAILURE`: falha não classificada; confirmar JDK 21 e recompilar o JAR.
 
-Ao aparecer **“Conexão com o PostgreSQL autenticada”**, o driver já abriu a conexão com as credenciais do banco. Isso ainda não significa que validou o ADMIN ou trocou a senha. Em falha, compartilhar somente a categoria e o texto fixo; nunca a conexão completa ou senhas. O aviso de resultado não confirmado permanece: testar login antes de repetir, principalmente se a conexão caiu durante o commit.
+Ao aparecer **“Conexão com o PostgreSQL autenticada”**, o driver já abriu a conexão com as credenciais do banco. Isso ainda não significa que validou o ADMIN ou trocou a senha. Em falha, compartilhar somente a categoria, o SQLSTATE permitido e o texto fixo; nunca a conexão completa ou senhas. O aviso de resultado não confirmado permanece: testar login antes de repetir uma manutenção, principalmente se a conexão caiu durante o commit. Uma falha no modo `-CheckConnection` não iniciou manutenção.
 
 Após atualizar o código, recompile com `.\mvnw.cmd -DskipTests package` para o script usar as novas mensagens. A correção é local ao CLI, sem redeploy da API.
 

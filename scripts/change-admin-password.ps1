@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('local', 'render')]
-    [string]$Environment
+    [string]$Environment,
+    [switch]$CheckConnection
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,8 +44,9 @@ try {
     # Preserve passwords with accents/Unicode. Restore only this terminal's encoding afterwards.
     [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+    $cliMode = if ($CheckConnection) { "--check-$($Environment.ToLowerInvariant())" } else { "--$($Environment.ToLowerInvariant())" }
     & $javaCommand '-Dloader.main=com.weg.benefits.identity.AdminPasswordMaintenanceCli' `
-        '-cp' $artifact 'org.springframework.boot.loader.launch.PropertiesLauncher' "--$($Environment.ToLowerInvariant())"
+        '-cp' $artifact 'org.springframework.boot.loader.launch.PropertiesLauncher' $cliMode
 } finally {
     [Console]::InputEncoding = $previousInputEncoding
     [Console]::OutputEncoding = $previousOutputEncoding
