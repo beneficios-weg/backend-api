@@ -55,6 +55,20 @@ O modo remoto aceita apenas host direto `*.neon.tech`, porta 5432, e usa TLS com
 
 ## Resultado e limites
 
+### Diagnosticar uma falha sem revelar credenciais
+
+O CLI atualizado imprime uma categoria fixa antes do aviso de resultado não confirmado. Não imprime mensagens de exceção, SQL, stack traces ou dados fornecidos. Os códigos PostgreSQL usados na classificação seguem a [documentação oficial de SQLSTATE](https://www.postgresql.org/docs/current/errcodes-appendix.html).
+
+- `DB_AUTH`: autenticação recusada pelo PostgreSQL; conferir **usuário/senha do banco**, distintos do ADMIN. Se a senha da role foi trocada no Neon, usar a nova e atualizar também `DB_PASSWORD` no Render.
+- `TLS`, `DNS`, `TIMEOUT`, `REDE`, `DB_CONNECTION`: conferir certificado/JDK, host, conectividade ou disponibilidade conforme a mensagem. Não desativar TLS.
+- `DB_NAME`, `DB_SCHEMA`, `DB_PERMISSION`: conferir banco/branch/migrações ou permissões; não recriar dados para contornar o erro.
+- `DB_LOCK`: evitar manutenção e uso concorrentes da conta.
+- `CLI_FAILURE`: falha não classificada; confirmar JDK 21 e recompilar o JAR.
+
+Ao aparecer **“Conexão com o PostgreSQL autenticada”**, o driver já abriu a conexão com as credenciais do banco. Isso ainda não significa que validou o ADMIN ou trocou a senha. Em falha, compartilhar somente a categoria e o texto fixo; nunca a conexão completa ou senhas. O aviso de resultado não confirmado permanece: testar login antes de repetir, principalmente se a conexão caiu durante o commit.
+
+Após atualizar o código, recompile com `.\mvnw.cmd -DskipTests package` para o script usar as novas mensagens. A correção é local ao CLI, sem redeploy da API.
+
 - Exige ADMIN ativo e senha atual correta. COLLABORATOR, conta inativa/inexistente, senha atual incorreta, nova senha igual à atual ou confirmação diferente não alteram a conta.
 - Nova senha: 6–72 caracteres, sem normalização. Preserva espaços e outros caracteres. Rejeita entrada inteiramente em branco para manter compatibilidade com `LoginRequest.password`, que já usa `@NotBlank`; essa validação não muda o contrato HTTP.
 - Usa exatamente o mesmo PBKDF2 e parâmetros da API. Guarda somente o hash; altera `password_hash` e `updated_at`, preservando ID, login, e-mail, papel, estado, data de criação e demais dados.

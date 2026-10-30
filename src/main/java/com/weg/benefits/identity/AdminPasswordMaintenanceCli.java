@@ -35,6 +35,7 @@ public final class AdminPasswordMaintenanceCli {
             exit = 2;
         } catch (SQLException | RuntimeException exception) {
             // Connection/driver errors can include SQL, host names or credentials. Do not print them.
+            System.err.println(safeFailureReason(exception));
             System.err.println("Não foi possível confirmar a troca. Verifique a conexão e teste o login antes de repetir.");
             exit = 1;
         }
@@ -75,6 +76,7 @@ public final class AdminPasswordMaintenanceCli {
             properties.setProperty("password", new String(databasePassword));
             properties.setProperty("ApplicationName", "weg-benefits-admin-password-maintenance");
             try (Connection connection = DriverManager.getConnection(url, properties)) {
+                console.printf("Conexão com o PostgreSQL autenticada. Validando a conta ADMIN.%n");
                 int revoked = changePassword(connection, PasswordEncodingConfiguration.newPasswordEncoder(),
                         login, currentPassword, newPassword);
                 console.printf("Senha alterada. Sessões anteriores removidas: %d. Entre novamente no ambiente escolhido.%n", revoked);
@@ -83,6 +85,37 @@ public final class AdminPasswordMaintenanceCli {
             properties.clear();
             clear(databasePassword); clear(currentPassword); clear(newPassword); clear(confirmation);
         }
+    }
+
+    /** Fixed operator diagnostics only; never interpolate exception text, SQL or supplied values. */
+    static String safeFailureReason(Throwable failure) {
+        var seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Throwable, Boolean>());
+        for (Throwable cause = failure; cause != null && seen.add(cause); cause = cause.getCause()) {
+            if (cause instanceof javax.net.ssl.SSLException || cause instanceof java.security.cert.CertificateException)
+                return "[TLS] Falha na conexão segura. Confira o JDK e seus certificados; não desative a validação TLS.";
+            if (cause instanceof java.net.UnknownHostException)
+                return "[DNS] Host não localizado. Confira o host direto do Neon e a conexão de rede.";
+            if (cause instanceof java.net.SocketTimeoutException)
+                return "[TIMEOUT] O banco não respondeu a tempo. Confira a rede e o estado do banco.";
+            if (cause instanceof java.net.ConnectException)
+                return "[REDE] Não foi possível alcançar o PostgreSQL. Confira host, porta, firewall e se o banco está iniciado.";
+        }
+        if (failure instanceof SQLException sql) {
+            String state = sql.getSQLState();
+            if (state != null && state.startsWith("28"))
+                return "[DB_AUTH] O PostgreSQL recusou a autenticação. Confira o usuário e a senha DO BANCO no Neon/Compose; não são o login e a senha do ADMIN.";
+            if ("3D000".equals(state))
+                return "[DB_NAME] Banco não encontrado. Confira o nome do banco usado pela API.";
+            if ("42P01".equals(state) || "42703".equals(state) || "3F000".equals(state))
+                return "[DB_SCHEMA] Estrutura esperada não encontrada. Confira projeto, branch, banco e migrações da API; não recrie nem apague dados.";
+            if ("42501".equals(state))
+                return "[DB_PERMISSION] O usuário do PostgreSQL não tem as permissões necessárias para a manutenção.";
+            if ("55P03".equals(state) || "40P01".equals(state))
+                return "[DB_LOCK] A manutenção encontrou uma operação concorrente. Evite uso simultâneo da conta.";
+            if (state != null && state.startsWith("08"))
+                return "[DB_CONNECTION] Falha ao estabelecer ou manter a conexão PostgreSQL. Confira rede, banco e JAR atualizado.";
+        }
+        return "[CLI_FAILURE] Falha interna na ferramenta ou na operação. Use o JDK 21 e recompile o JAR; não compartilhe credenciais.";
     }
 
     static String databaseUrl(boolean remote, String host, String port, String database) {
