@@ -40,6 +40,34 @@ class CatalogIntegrationTests {
     @Autowired Validator validator;
 
     @Test
+    void categoryCanBeRenamedToLazerWithoutLosingItsEstablishmentsOrMetadata() throws Exception {
+        UUID categoryId = catalog.createCategory(new CategoryCreateRequest("Lazer e Turismo", "lucide:ticket", "#E65100")).id();
+        var before = catalog.getCategory(categoryId);
+        var benefit = benefit("Crachá", "20%");
+        var place = catalog.createEstablishment(partner(categoryId, benefit.id(), EstablishmentChannel.ONLINE));
+        establishments.flush();
+        http.perform(patch("/v1/admin/categories/" + categoryId)
+                .with(user("admin").roles("ADMIN")).contentType("application/json").content("{\"name\":\"Lazer\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Lazer"))
+                .andExpect(jsonPath("$.id").value(categoryId.toString()));
+        establishments.flush();
+        var after = catalog.getCategory(categoryId);
+        assertEquals(before.iconKey(), after.iconKey());
+        assertEquals(before.colorHex(), after.colorHex());
+        assertEquals(before.createdAt(), after.createdAt());
+        assertEquals(before.active(), after.active());
+        http.perform(get("/v1/establishments").param("categoryId", categoryId.toString())
+                .with(user("colaborador").roles("COLLABORATOR")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(place.id().toString()))
+                .andExpect(jsonPath("$.content[0].category.name").value("Lazer"));
+        assertTrue(validator.validate(new CategoryCreateRequest("Lazer", "lucide:ticket", "#E65100")).isEmpty());
+        http.perform(patch("/v1/admin/categories/" + categoryId)
+                .with(user("admin").roles("ADMIN")).contentType("application/json").content("{\"name\":\"Laze\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void listIncludesOnlineWhileMapContainsOnlyPhysicalAndHybridPartners() throws Exception {
         UUID categoryId = category();
         var benefit = benefit("Crachá", "20%");

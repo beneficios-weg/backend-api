@@ -19,7 +19,7 @@ public final class CatalogDtos {
     private CatalogDtos() { }
 
     public record CategoryCreateRequest(
-            @NotBlank @Size(min = 6, max = 75) String name,
+            @NotBlank @Size(min = 5, max = 75) String name,
             @NotBlank @Size(max = 160) @Pattern(regexp = "[a-z0-9-]+:[a-z0-9-]+") String iconKey,
             @NotBlank @Pattern(regexp = "#[0-9A-Fa-f]{6}") String colorHex) { }
 
@@ -27,7 +27,7 @@ public final class CatalogDtos {
             @NotEmpty @Size(max = 100) List<@NotNull @Valid CategoryCreateRequest> categories) { }
 
     public record CategoryPatchRequest(
-            @Size(min = 6, max = 75) String name,
+            @Size(min = 5, max = 75) String name,
             @Size(max = 160) @Pattern(regexp = "[a-z0-9-]+:[a-z0-9-]+") String iconKey,
             @Pattern(regexp = "#[0-9A-Fa-f]{6}") String colorHex,
             Boolean active) {

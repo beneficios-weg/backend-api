@@ -10,5 +10,7 @@ constraint on `establishment.benefit_id` so multiple establishments can referenc
 `V7__preserve_catalog_source_text.sql` widens required source-text fields without changing values.
 `V8__online_establishment_channels.sql` adds PHYSICAL/ONLINE/HYBRID with conditional location
 constraints; existing establishments remain PHYSICAL with their coordinates and relationships.
+`V9__allow_five_character_category_names.sql` allows 5–75 characters so the approved name
+Lazer can be used. It changes only the length constraint, without renaming categories or changing links.
 Add new migrations for later modules; never edit a migration after it has been applied to a shared
 database.

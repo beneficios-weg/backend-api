@@ -77,6 +77,8 @@ Paginação começa em `page=0`; `size` padrão é `20`. A listagem administrati
 
 ## Catálogo: administração
 
+O nome de categoria aceita 5–75 caracteres após remover espaços externos, inclusive **Lazer** (V9). Corrigir nomes por `PATCH /v1/admin/categories/{id}` com `{"name":"Lazer"}` sobre a categoria existente. [Cobertura do catálogo e correção do nome](catalogo-cobertura-e-nomes.md).
+
 Todas as rotas desta seção exigem papel `ADMIN`. As listas administrativas usam `page=0` e `size=20` por padrão, com tamanho máximo de 100. As rotas de desativação preservam o registro e suas relações.
 
 | Recurso | Listar | Consultar por ID | Criar | Criar em lote | Editar | Desativar |

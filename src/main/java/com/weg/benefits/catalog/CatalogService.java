@@ -55,6 +55,7 @@ public class CatalogService {
     }
 
     public CategoryResponse createCategory(CategoryCreateRequest request) {
+        validateLength(request.name(), 5, 75, "nome da categoria");
         requirePaletteColor(request.colorHex());
         return CategoryResponse.from(categories.save(new Category(request.name().trim(), request.iconKey(),
                 request.colorHex().toUpperCase(java.util.Locale.ROOT))));
@@ -66,6 +67,7 @@ public class CatalogService {
 
     public CategoryResponse updateCategory(UUID id, CategoryPatchRequest request) {
         requireChanges(request.hasChanges());
+        if (request.name() != null) validateLength(request.name(), 5, 75, "nome da categoria");
         Category value = category(id);
         if (request.colorHex() != null) requirePaletteColor(request.colorHex());
         value.update(trim(request.name()), request.iconKey(), upper(request.colorHex()), request.active());

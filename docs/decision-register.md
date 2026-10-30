@@ -74,6 +74,8 @@ Atualize este arquivo ao confirmar decisões. Uma recomendação não vira decis
 
 ## Pendências que bloqueiam ou afetam etapas
 
+**D-067 — Nome Lazer e cobertura da carga (2026-10-30):** o usuário corrigiu o nome da categoria para Lazer, confirmado no menu original do PDF. O mínimo antigo de seis caracteres era incompatível; a correção mínima aceita 5–75 no DTO, serviço e constraint por V9. Nome será corrigido na categoria existente por PATCH, preservando UUID e relações; V9 não renomeia dados automaticamente. A contagem de dez estabelecimentos de Saúde foi confirmada no Neon e corresponde à carga parcial: 20 dos 30 benefícios dessa categoria ainda sem estabelecimento ativo. Não fabricar endereço/coordenadas, alterar canal ou reativar cópias para preencher cobertura. Ver [auditoria](catalogo-cobertura-e-nomes.md).
+
 | ID | Pergunta | Recomendação atual | Resolver antes de |
 |---|---|---|---|
 | P-028 | O cliente desktop será navegador em origem diferente da API? | Preferir mesma origem ou cliente nativo; se for cross-origin no navegador, usar allowlist CORS explícita com credenciais. A fundação já configura CORS por allowlist | Integração |

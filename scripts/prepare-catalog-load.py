@@ -5,6 +5,9 @@ import re
 from pathlib import Path
 from uuid import UUID
 
+# Approved correction of category metadata; historical source files stay intact.
+CATEGORY_NAMES = {"Lazer e Turismo": "Lazer"}
+
 
 def read(path):
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
@@ -44,6 +47,22 @@ def prepare(source, destination, ids=None):
     offers = manifest["detailedBenefits"]
     units = read(source / "03_establishments_research_not_api_payload.json")["units"]
     mapping = read(ids) if ids else {}
+    mapped_categories = {}
+    for name, value in mapping.get("categories", {}).items():
+        canonical = CATEGORY_NAMES.get(name, name)
+        previous = mapped_categories.get(canonical)
+        if previous and value and str(UUID(previous)) != str(UUID(value)):
+            raise ValueError("Conflicting category IDs after approved name correction")
+        mapped_categories[canonical] = value or previous
+    mapping["categories"] = mapped_categories
+    for offer in offers:
+        offer["category"] = CATEGORY_NAMES.get(offer["category"], offer["category"])
+    category_batch = read(source / "01_categories_batch.json")
+    for category in category_batch["categories"]:
+        category["name"] = CATEGORY_NAMES.get(category["name"], category["name"])
+    names = [category["name"] for category in category_batch["categories"]]
+    if len(names) != len(set(names)):
+        raise ValueError("Duplicate categories after approved name correction; review existing records")
     refs = {offer["reference"]: offer for offer in offers}
     if len(refs) != len(offers):
         raise ValueError("Duplicate benefit references")
@@ -54,7 +73,7 @@ def prepare(source, destination, ids=None):
         real_id(mapping, "categories", offer["category"])
         real_id(mapping, "benefits", offer["reference"])
     destination.mkdir(parents=True)
-    write(destination, "01_categories_batch.json", read(source / "01_categories_batch.json"))
+    write(destination, "01_categories_batch.json", category_batch)
     index = []
     for start in range(0, len(offers), 100):
         filename = f"02_benefits_batch_{start // 100 + 1:03d}.json"
@@ -136,9 +155,19 @@ def prepare(source, destination, ids=None):
         ready_index.extend({"reference": draft["reference"], "batchFile": filename, "responseIndex": position}
                            for position, draft in enumerate(batch))
     write(destination, "07_establishment_response_index.json", ready_index)
+    covered = {draft["benefitReference"] for draft in ready}
+    missing = [{"reference": offer["reference"], "partnerName": offer["partnerName"],
+                "category": offer["category"], "sourcePages": offer["sourcePages"],
+                "pendingUnits": [{"reference": draft["reference"], "pending": draft["pending"]}
+                                 for draft in drafts if draft["benefitReference"] == offer["reference"]]}
+               for offer in offers if offer["reference"] not in covered]
+    write(destination, "09_catalog_coverage.json", {
+        "scope": "Prepared payloads only; not imported or live API data", "imported": False,
+        "benefitsWithReadyEstablishment": len(covered), "benefitsWithoutReadyEstablishment": missing})
     summary = {"benefits": len(offers), "onlineDrafts": sum(o["deliveryMode"] == "ONLINE" for o in offers),
                "physicalUnitDrafts": len(units), "readyEstablishments": len(ready),
-               "pendingEstablishments": len(drafts) - len(ready), "imported": False}
+               "pendingEstablishments": len(drafts) - len(ready),
+               "benefitsWithoutReadyEstablishment": len(missing), "imported": False}
     write(destination, "08_validation.json", summary)
     (destination / "README.md").write_text(
         "# Carga preparada — não importada\n\n"
@@ -147,6 +176,9 @@ def prepare(source, destination, ids=None):
         "Preencher uma cópia de 04 com UUIDs retornados pela API (categorias existentes podem ser reutilizadas).\n"
         "Rodar novamente com --ids e outra saída para produzir 06 somente com parceiros completos.\n"
         "05 é revisão, nunca payload HTTP: mostra endereços pendentes, campanhas conflitantes e UUIDs ausentes.\n"
+        "09 mostra cada benefício ainda sem estabelecimento pronto; benefícios cadastrados sem vínculo não aparecem no Mobile.\n"
+        "A cobertura descreve arquivos preparados, não confirma importação. Não reenviar lotes existentes.\n"
+        "Nome aprovado: Lazer (requer V9). Reutilizar o UUID antigo e corrigir por PATCH, sem criar outra categoria.\n"
         "Coordenadas aprovadas não significam importação nem confirmação comercial de todas as unidades.\n"
         "Textos são preservados; cupons, datas e erros da fonte não foram corrigidos.\n"
         "ONLINE: lista, sem endereço/GPS; Mobile usa forMap=true para pins.\n"

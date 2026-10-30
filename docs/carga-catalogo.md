@@ -1,5 +1,7 @@
 # Carga do catálogo e parceiros online
 
+**Revisão de 2026-10-30:** existem 49 benefícios do PDF ainda sem estabelecimento, sendo 20 de Saúde. Consulte [cobertura e nomes](catalogo-cobertura-e-nomes.md). O preparador produz `09_catalog_coverage.json` para evidenciar a carga parcial e usa **Lazer** (requer V9), reconhecendo o UUID sob a chave histórica Lazer e Turismo. Não reenviar os lotes existentes.
+
 ## Contrato da revisão de 2026-10-27
 
 Cada estabelecimento continua com exatamente um benefício; um benefício pode ser compartilhado.
@@ -44,6 +46,7 @@ Arquivos produzidos:
 - `06_establishments_batch_*.json`: somente itens completos após fornecer mapa de UUIDs reais.
 - `07_establishment_response_index.json`: referências dos itens incluídos em 06 e posição das respostas.
 - `08_validation.json`: contagens e declaração de que não houve importação.
+- `09_catalog_coverage.json`: benefícios com/sem estabelecimento pronto e unidades pendentes; preparação não significa publicação.
 
 Na preparação inicial, não há lote 06: faltam os UUIDs retornados pela API. Não enviar 03/04/05/07/08
 a nenhum endpoint. Não gerar UUIDs aleatórios para preencher referências. Criar categoria/benefício

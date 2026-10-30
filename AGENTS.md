@@ -38,6 +38,8 @@ Os documentos descrevem intenção e decisões. O código e as migrações mostr
 
 ## Regras de implementação
 
+**Catálogo e nomes — 2026-10-30:** o nome correto da categoria é **Lazer**, conforme usuário e menu do PDF; não ampliar para Lazer e Turismo. V9 permite nomes de categoria de 5–75 caracteres, preservando dados. Corrigir a categoria existente por PATCH após publicar V9; não duplicar categorias nem reativar cópias para aumentar contagens. A carga é parcial: 49 benefícios do PDF ainda sem estabelecimento ativo (20 de Saúde), conforme auditoria em `docs/catalogo-cobertura-e-nomes.md`. O preparador evidencia cobertura; arquivos preparados não significam importação.
+
 **Atualização de Identity — 2026-10-19:** as rotas de autenticação por sessão e administração de usuários estão implementadas parcialmente; a desativação é `POST /v1/admin/users/{id}/deactivation` conforme D-035. Considere obsoleta a frase acima que descreve o código como stateless e sem autenticação. Consulte `docs/implementation-log.md` para o estado validado. As demais regras de não inferir pendências permanecem vigentes.
 
 - Implemente somente a etapa/módulo solicitado; não antecipe os demais.

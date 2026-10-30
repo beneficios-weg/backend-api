@@ -32,6 +32,15 @@ class CatalogServiceTests {
     }
 
     @Test
+    void categoryNameAcceptsLazerAndValidatesTheTrimmedLength() {
+        when(categories.save(any(Category.class))).thenAnswer(call -> call.getArgument(0));
+        assertEquals("Lazer", catalog.createCategory(new CategoryCreateRequest(" Lazer ", "lucide:ticket", "#E65100")).name());
+        assertEquals("Lazer", catalog.updateCategory(categoryId, new CategoryPatchRequest(" Lazer ", null, null, null)).name());
+        assertThrows(CatalogException.class, () -> catalog.createCategory(new CategoryCreateRequest(" Laze ", "lucide:ticket", "#E65100")));
+        assertThrows(CatalogException.class, () -> catalog.updateCategory(categoryId, new CategoryPatchRequest("    ", null, null, null)));
+    }
+
+    @Test
     void sourceTextIsNotTrimmedRewrittenOrPaddedOnCreateAndPatch() {
         var created = catalog.createBenefit(new BenefitCreateRequest(" Público ", " Aapresentar crachá ",
                 " Contato ", List.of(new DiscountInput("20%", " 20% "))));
