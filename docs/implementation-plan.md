@@ -128,3 +128,12 @@ de instruções/descrições mantendo obrigatoriedade; V8 adiciona canais sem re
 O preparador gera lotes e pendências sem importar dados ou gerar UUIDs fictícios. A correção da Care
 mantém somente a oferta de 20% em Nutrição atribuída à clínica (D-062); não exige mudança da
 cardinalidade D-057. Os 20 novos pares de coordenadas estão aprovados (D-063), sem importação.
+
+## 9. Cobertura e nome de categoria — 2026-10-30
+
+A carga confirmada é parcial: 69 estabelecimentos novos vinculam 63 dos 112 benefícios do PDF.
+Restam 49 benefícios sem estabelecimento ativo, sendo 20 de Saúde; pesquisar/revisar dados antes
+de cadastro, sem reativar cópias nem inventar canais/endereço. O preparador agora evidencia essa lacuna.
+O nome aprovado é Lazer (D-067). V9 ajusta o mínimo a cinco caracteres sem renomear dados;
+publicar a API e corrigir a categoria existente por PATCH. Detalhes e lista em
+[cobertura e nomes](catalogo-cobertura-e-nomes.md). Não marcar catálogo integral como concluído.

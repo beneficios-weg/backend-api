@@ -13,6 +13,34 @@ TEST_TEMP.mkdir(exist_ok=True)
 
 
 class PrepareCatalogTests(unittest.TestCase):
+    def test_approved_leisure_name_reuses_legacy_uuid_without_rewriting_source_or_offer(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP) as temporary:
+            root = Path(temporary)
+            source = self.fixture(root)
+            manifest = prepare.read(source / "00_benefits_manifest.json")
+            manifest["detailedBenefits"][0]["category"] = "Lazer e Turismo"
+            prepare.write(source, "00_benefits_manifest.json", manifest)
+            prepare.write(source, "01_categories_batch.json", {"categories": [{"name": "Lazer e Turismo"}]})
+            original = (source / "00_benefits_manifest.json").read_bytes()
+            category_id, benefit_id = str(uuid4()), str(uuid4())
+            prepare.write(root, "ids.json", {"categories": {"Lazer e Turismo": category_id}, "benefits": {"PDF-000": benefit_id}})
+            output = root / "output"
+            prepare.prepare(source, output, root / "ids.json")
+            self.assertEqual(original, (source / "00_benefits_manifest.json").read_bytes())
+            self.assertEqual("Lazer", prepare.read(output / "01_categories_batch.json")["categories"][0]["name"])
+            self.assertEqual(category_id, prepare.read(output / "06_establishments_batch_001.json")["establishments"][0]["categoryId"])
+            self.assertEqual(manifest["detailedBenefits"][0]["payload"], prepare.read(output / "02_benefits_batch_001.json")["benefits"][0])
+            self.assertIn("Lazer", prepare.read(output / "04_ids_template.json")["categories"])
+
+    def test_conflicting_leisure_ids_abort_before_creating_output(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP) as temporary:
+            root = Path(temporary)
+            source = self.fixture(root)
+            prepare.write(root, "ids.json", {"categories": {"Lazer e Turismo": str(uuid4()), "Lazer": str(uuid4())}})
+            with self.assertRaises(ValueError):
+                prepare.prepare(source, root / "output", root / "ids.json")
+            self.assertFalse((root / "output").exists())
+
     def fixture(self, directory, count=1):
         source = directory / "source"
         source.mkdir()
@@ -34,6 +62,7 @@ class PrepareCatalogTests(unittest.TestCase):
             summary = prepare.prepare(source, output)
             self.assertEqual(112, summary["benefits"])
             self.assertEqual(0, summary["readyEstablishments"])
+            self.assertEqual(112, summary["benefitsWithoutReadyEstablishment"])
             self.assertEqual(100, len(prepare.read(output / "02_benefits_batch_001.json")["benefits"]))
             tail = prepare.read(output / "02_benefits_batch_002.json")["benefits"]
             self.assertEqual(12, len(tail))
@@ -55,11 +84,30 @@ class PrepareCatalogTests(unittest.TestCase):
             summary = prepare.prepare(source, output, root / "ids.json")
             self.assertEqual(1, summary["readyEstablishments"])
             self.assertEqual(1, summary["pendingEstablishments"])
+            self.assertEqual(0, summary["benefitsWithoutReadyEstablishment"])
             partner = prepare.read(output / "06_establishments_batch_001.json")["establishments"][0]
             self.assertEqual("ONLINE", partner["channel"])
             self.assertNotIn("latitude", partner)
             self.assertEqual(benefit, partner["benefitId"])
             self.assertEqual(category, partner["categoryId"])
+
+    def test_coverage_lists_offers_without_any_candidate_unit(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP) as temporary:
+            root = Path(temporary)
+            source = self.fixture(root, 2)
+            manifest = prepare.read(source / "00_benefits_manifest.json")
+            manifest["detailedBenefits"][1]["deliveryMode"] = "PHYSICAL"
+            prepare.write(source, "00_benefits_manifest.json", manifest)
+            prepare.write(root, "ids.json", {"categories": {"Categoria": str(uuid4())},
+                "benefits": {"PDF-000": str(uuid4()), "PDF-001": str(uuid4())}})
+            output = root / "output"
+            result = prepare.prepare(source, output, root / "ids.json")
+            self.assertEqual(1, result["benefitsWithoutReadyEstablishment"])
+            coverage = prepare.read(output / "09_catalog_coverage.json")
+            self.assertFalse(coverage["imported"])
+            self.assertEqual(1, coverage["benefitsWithReadyEstablishment"])
+            self.assertEqual("PDF-001", coverage["benefitsWithoutReadyEstablishment"][0]["reference"])
+            self.assertEqual([], coverage["benefitsWithoutReadyEstablishment"][0]["pendingUnits"])
 
     def test_conflicting_campaigns_never_pick_a_benefit_implicitly(self):
         with tempfile.TemporaryDirectory(dir=TEST_TEMP) as temporary:

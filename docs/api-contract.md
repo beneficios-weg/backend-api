@@ -51,6 +51,8 @@ Estabelecimentos, categorias, benefícios e serviços inativos não aparecem nas
 
 ## Administração de catálogo — Catalog/Admin
 
+Categoria aceita nome de 5–75 caracteres após remover espaços externos (V9), permitindo **Lazer**. A edição conserva UUID e vínculos. Ver [cobertura e correção dos nomes](catalogo-cobertura-e-nomes.md).
+
 Implementado para ADMIN, com paginação, criação, edição parcial e desativação lógica:
 
 Proposta de famílias de rotas protegidas pelo papel ADMIN:

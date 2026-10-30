@@ -30,6 +30,7 @@ registro de decisões.
 - `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
 - `api-contract.md`: contrato HTTP inicial proposto para alinhar API, mobile e desktop; endpoints ainda não implementados não devem ser tratados como existentes.
 - [`http-api.md`](http-api.md): referência prática das rotas HTTP implementadas, autenticação, payloads e exemplos JSON; inclui cadastro em lote dos recursos do Catalog.
+- [`catalogo-cobertura-e-nomes.md`](catalogo-cobertura-e-nomes.md): auditoria dos 49 benefícios sem estabelecimento, contagens por categoria e correção de Lazer com V9.
 - [`relatorio-integracao-mobile-localizacao.md`](relatorio-integracao-mobile-localizacao.md): relatório independente da integração API–Mobile, avaliação da Geoapify, contrato atual de catálogo/visitas e proposta de localização em foreground/background.
 - [`geocodificacao-catalogo.md`](geocodificacao-catalogo.md): consultas Geoapify, 13 coordenadas confirmadas pelo usuário, 3 casos adiados, vínculos dos 18 estabelecimentos/benefícios da carga e divergências ainda pendentes para importação.
 - [`revisao-beneficios-pdf.md`](revisao-beneficios-pdf.md): 112 ofertas com escrita da fonte, correção da Care e 20 pontos aprovados; API V8 aceita os textos literais e canais online, com pendências de unidades/UUIDs explícitas.

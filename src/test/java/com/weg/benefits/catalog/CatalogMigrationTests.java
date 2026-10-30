@@ -40,6 +40,13 @@ class CatalogMigrationTests {
                     """);
             Flyway.configure().dataSource(url, username, password).schemas(schema).defaultSchema(schema)
                     .load().migrate();
+            try (var original = sql.executeQuery("SELECT name FROM catalog_category WHERE id='10000000-0000-0000-0000-000000000001'")) {
+                assertTrue(original.next());
+                assertEquals("Categoria legada", original.getString(1));
+            }
+            sql.executeUpdate("UPDATE catalog_category SET name='Lazer' WHERE id='10000000-0000-0000-0000-000000000001'");
+            assertThrows(java.sql.SQLException.class, () -> sql.executeUpdate(
+                    "UPDATE catalog_category SET name='Laze' WHERE id='10000000-0000-0000-0000-000000000001'"));
             try (var result = sql.executeQuery("""
                     SELECT count(*),count(DISTINCT e.benefit_id),bool_and(e.channel='PHYSICAL'),
                     bool_and(e.latitude=-26.300000 AND e.longitude=-48.800000),
