@@ -137,3 +137,14 @@ de cadastro, sem reativar cópias nem inventar canais/endereço. O preparador ag
 O nome aprovado é Lazer (D-067). V9 ajusta o mínimo a cinco caracteres sem renomear dados;
 publicar a API e corrigir a categoria existente por PATCH. Detalhes e lista em
 [cobertura e nomes](catalogo-cobertura-e-nomes.md). Não marcar catálogo integral como concluído.
+
+## 10. Validação de sessões e Engagement — 2026-11-12
+
+Adicionada suíte de integração com PostgreSQL descartável, cookies/sessões JDBC e filtros reais,
+incluindo login/logout por HTTP no Tomcat em `8081`, autorização, revogação, isolamento entre contas,
+transações de criação com Gmail simulado e reenvios concorrentes de favoritos/visitas.
+Corrigida a resposta de sessão indisponível para não distinguir conta inativa/ausente, conforme D-054,
+e a exclusão explícita de sessões sem expiração. Não há novas rotas, migrações ou mudanças de
+política de sessão. Execução e limites estão em [testes de integração](testes-integracao-api.md).
+O envio real no ambiente hospedado, homologação dos clientes, carga restante e backup/restauração
+continuam necessários para release; esta suíte não conclui essas etapas.

@@ -63,14 +63,10 @@ public class IdentityService {
 
     @Transactional
     public AppUser lockActiveUserForEngagement(Integer id) {
-        AppUser user = users.findByIdForUpdate(id)
-                .orElseThrow(() -> new IdentityException(HttpStatus.UNAUTHORIZED, "Sessão inválida",
-                        "Não foi possível validar a conta autenticada."));
-        if (!user.isActive()) {
-            throw new IdentityException(HttpStatus.UNAUTHORIZED, "Conta indisponível",
-                    "A conta não está disponível para sincronizar operações.");
-        }
-        return user;
+        return users.findByIdForUpdate(id)
+                .filter(AppUser::isActive)
+                .orElseThrow(() -> new IdentityException(HttpStatus.UNAUTHORIZED, "Não autenticado",
+                        "É necessário entrar para acessar este recurso."));
     }
 
     @Transactional

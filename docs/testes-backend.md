@@ -1,5 +1,15 @@
 # Estratégia de testes do Backend
 
+## Referência atual — 12/11/2026
+
+A suíte Java já existe. A execução isolada com PostgreSQL, a cobertura de sessões/Engagement
+e os resultados atuais estão em [testes de integração](testes-integracao-api.md).
+O texto abaixo é o planejamento histórico anterior à implementação; primeiro acesso e recuperação
+não fazem parte do escopo aprovado. Não interpretar a ausência de suíte descrita no snapshot como
+o estado atual do projeto. Integração contínua ainda não está configurada neste repositório.
+
+## Planejamento histórico preservado
+
 ## Situação
 
 Não há framework, suíte ou pipeline de testes no repositório.

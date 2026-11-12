@@ -25,6 +25,7 @@ registro de decisões.
 ## Documentos
 
 - [`carga-catalogo.md`](carga-catalogo.md): canais físico/online/híbrido, preservação literal, preparador de lotes e testes isolados com PostgreSQL.
+- [`testes-integracao-api.md`](testes-integracao-api.md): comando PowerShell com PostgreSQL descartável, testes de sessões/segurança/favoritos/visitas e resultados reais.
 
 - `implementation-plan.md`: arquitetura proposta, módulos, ordem, entregas e critérios de conclusão.
 - `decision-register.md`: decisões confirmadas e itens que ainda precisam de aprovação.
