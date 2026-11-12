@@ -126,6 +126,18 @@ OAuth configuration are ready. The password is read without echo and is not pass
 java -jar .\target\benefits-0.0.1-SNAPSHOT.jar --app.cli.provision-admin=true --spring.main.web-application-type=none
 ```
 
+## Automated integration checks
+
+With Java 21, Docker Desktop running and port `8081` free, run from PowerShell:
+
+```powershell
+.\scripts\test-api-integration.ps1
+```
+
+This runs Maven `verify` against disposable PostgreSQL databases, including real session cookies,
+authorization and favorites/visits. Google HTTP is simulated; no real emails are sent.
+See [the integration test guide](docs/testes-integracao-api.md) for coverage, isolation and limitations.
+
 ## Available infrastructure endpoints
 
 - Health: `http://localhost:8081/actuator/health`
